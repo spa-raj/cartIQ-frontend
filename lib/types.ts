@@ -224,10 +224,15 @@ export interface BaseEvent {
   timestamp: string;
 }
 
+export type DeviceType = 'mobile' | 'tablet' | 'desktop';
+
 export interface UserEvent extends BaseEvent {
   eventType: 'page_view' | 'login' | 'logout' | 'session_start' | 'session_end';
   pageType?: string;
   pagePath?: string;
+  pageUrl?: string;
+  deviceType?: DeviceType;
+  referrer?: string;
 }
 
 export type ProductViewSource = 'search' | 'category' | 'home' | 'recommendation' | 'direct' | 'cart';

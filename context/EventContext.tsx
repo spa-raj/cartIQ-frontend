@@ -4,6 +4,21 @@ import React, { createContext, useContext, useCallback, useEffect, useState } fr
 import { api } from '@/lib/api';
 import { generateSessionId } from '@/lib/utils';
 import { useAuth } from './AuthContext';
+import { DeviceType } from '@/lib/types';
+
+// Helper to detect device type from user agent
+const getDeviceType = (): DeviceType => {
+  if (typeof window === 'undefined') return 'desktop';
+
+  const ua = navigator.userAgent.toLowerCase();
+  if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
+    return 'tablet';
+  }
+  if (/mobile|android|iphone|ipod|blackberry|opera mini|iemobile|wpdesktop/i.test(ua)) {
+    return 'mobile';
+  }
+  return 'desktop';
+};
 
 interface EventContextType {
   sessionId: string;
@@ -70,13 +85,21 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
     (pageType: string, pagePath?: string) => {
       if (!sessionId) return;
 
+      const currentPath = pagePath || (typeof window !== 'undefined' ? window.location.pathname : '');
+      const pageUrl = typeof window !== 'undefined' ? window.location.href : '';
+      const referrer = typeof document !== 'undefined' ? document.referrer : '';
+      const deviceType = getDeviceType();
+
       api
         .trackUserEvent({
           sessionId,
           userId: user?.id,
           eventType: 'page_view',
           pageType: mapPageType(pageType),
-          pagePath: pagePath || (typeof window !== 'undefined' ? window.location.pathname : ''),
+          pagePath: currentPath,
+          pageUrl,
+          deviceType,
+          referrer: referrer || undefined,
         })
         .catch((error) => {
           console.debug('Failed to track page view:', error);
