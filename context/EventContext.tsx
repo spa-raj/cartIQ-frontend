@@ -20,8 +20,14 @@ interface EventContextType {
     action: 'PLACED' | 'CANCELLED' | 'COMPLETED';
     orderId: string;
     orderNumber: string;
-    totalAmount: number;
-    itemCount: number;
+    items: { productId: string; productName: string; quantity: number; unitPrice: number }[];
+    subtotal: number;
+    discount: number;
+    total: number;
+    paymentMethod: string;
+    status: string;
+    shippingCity: string;
+    shippingState: string;
   }) => void;
 }
 
@@ -124,8 +130,14 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
       action: 'PLACED' | 'CANCELLED' | 'COMPLETED';
       orderId: string;
       orderNumber: string;
-      totalAmount: number;
-      itemCount: number;
+      items: { productId: string; productName: string; quantity: number; unitPrice: number }[];
+      subtotal: number;
+      discount: number;
+      total: number;
+      paymentMethod: string;
+      status: string;
+      shippingCity: string;
+      shippingState: string;
     }) => {
       if (!sessionId) return;
 

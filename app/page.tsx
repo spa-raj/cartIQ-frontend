@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/Loading';
 
 export default function HomePage() {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [electronicsProducts, setElectronicsProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -56,10 +57,11 @@ export default function HomePage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Use paginated products API instead of featured
-        const [productsRes, categoriesRes] = await Promise.allSettled([
+        // Fetch products, categories, and electronics in parallel
+        const [productsRes, categoriesRes, electronicsRes] = await Promise.allSettled([
           api.getProducts(0, 12, 'createdAt,desc'),
           api.getCategories(),
+          api.searchProducts('electronics', 0, 8),
         ]);
 
         // Handle products result
@@ -75,6 +77,13 @@ export default function HomePage() {
           setCategories(categoriesRes.value.slice(0, 8));
         } else {
           console.error('Failed to load categories:', categoriesRes.status === 'rejected' ? categoriesRes.reason : 'Invalid response');
+        }
+
+        // Handle electronics result
+        if (electronicsRes.status === 'fulfilled' && electronicsRes.value?.content) {
+          setElectronicsProducts(electronicsRes.value.content);
+        } else {
+          console.error('Failed to load electronics:', electronicsRes.status === 'rejected' ? electronicsRes.reason : 'No content');
         }
       } catch (error) {
         console.error('Failed to load home page data:', error);
@@ -291,7 +300,7 @@ export default function HomePage() {
             <div className="flex items-center justify-between p-4 border-b border-gray-100">
               <h2 className="text-xl font-bold text-gray-900">Best of Electronics</h2>
               <Link
-                href="/products?category=electronics"
+                href="/products?search=electronics"
                 className="px-6 py-2 bg-[#2874f0] text-white text-sm font-medium rounded-sm hover:bg-[#1a5dc8] transition-colors"
               >
                 VIEW ALL
@@ -307,12 +316,12 @@ export default function HomePage() {
                     <Skeleton className="h-4 w-1/2" />
                   </div>
                 ))
-              ) : featuredProducts.length === 0 ? (
+              ) : electronicsProducts.length === 0 ? (
                 <div className="col-span-full py-12 text-center text-gray-500">
-                  <p>No products available</p>
+                  <p>No electronics available</p>
                 </div>
               ) : (
-                featuredProducts.slice(0, 4).map((product) => (
+                electronicsProducts.slice(0, 4).map((product) => (
                   <Link
                     key={product.id}
                     href={`/products/${product.id}`}

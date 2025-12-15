@@ -72,8 +72,19 @@ export default function CheckoutPage() {
         action: 'PLACED',
         orderId: order.id,
         orderNumber: order.orderNumber,
-        totalAmount: order.totalAmount,
-        itemCount: order.totalQuantity,
+        items: order.items?.map(item => ({
+          productId: item.productId,
+          productName: item.productName,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+        })) || [],
+        subtotal: order.subtotal,
+        discount: 0, // No discount field in current order response
+        total: order.totalAmount,
+        paymentMethod: 'COD', // Default to Cash on Delivery
+        status: order.status,
+        shippingCity: order.shippingCity || formData.shippingCity,
+        shippingState: order.shippingState || formData.shippingState || '',
       });
 
       // Refresh cart

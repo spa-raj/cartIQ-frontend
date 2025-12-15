@@ -85,8 +85,19 @@ function OrderDetailContent() {
         action: 'CANCELLED',
         orderId: order.id,
         orderNumber: order.orderNumber,
-        totalAmount: order.totalAmount,
-        itemCount: order.totalQuantity,
+        items: order.items?.map(item => ({
+          productId: item.productId,
+          productName: item.productName,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+        })) || [],
+        subtotal: order.subtotal,
+        discount: 0,
+        total: order.totalAmount,
+        paymentMethod: 'COD',
+        status: updatedOrder.status,
+        shippingCity: order.shippingCity || '',
+        shippingState: order.shippingState || '',
       });
     } catch (error) {
       console.error('Failed to cancel order:', error);

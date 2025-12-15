@@ -244,12 +244,25 @@ export interface CartEvent extends BaseEvent {
   price?: number;
 }
 
+export interface OrderEventItem {
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+}
+
 export interface OrderEvent extends BaseEvent {
   action: 'PLACED' | 'CANCELLED' | 'COMPLETED';
   orderId: string;
   orderNumber: string;
-  totalAmount: number;
-  itemCount: number;
+  items: OrderEventItem[];
+  subtotal: number;
+  discount: number;
+  total: number;
+  paymentMethod: string;
+  status: string;
+  shippingCity: string;
+  shippingState: string;
 }
 
 // API Error
