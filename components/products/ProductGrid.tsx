@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Product } from '@/lib/types';
+import { Product, ProductViewSource } from '@/lib/types';
 import ProductCard from './ProductCard';
 import { ProductGridSkeleton } from '@/components/ui/Loading';
 import { Package } from 'lucide-react';
@@ -10,12 +10,16 @@ interface ProductGridProps {
   products: Product[];
   isLoading?: boolean;
   emptyMessage?: string;
+  source?: ProductViewSource;
+  searchQuery?: string;
 }
 
 export default function ProductGrid({
   products,
   isLoading = false,
   emptyMessage = 'No products found',
+  source = 'direct',
+  searchQuery,
 }: ProductGridProps) {
   if (isLoading) {
     return <ProductGridSkeleton count={8} />;
@@ -36,7 +40,7 @@ export default function ProductGrid({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {products.map((product) => (
-        <ProductCard key={product.id} product={product} />
+        <ProductCard key={product.id} product={product} source={source} searchQuery={searchQuery} />
       ))}
     </div>
   );

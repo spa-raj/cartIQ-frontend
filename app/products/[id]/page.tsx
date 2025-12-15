@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import React, { useEffect, useState, useRef, useCallback, Suspense } from 'react';
+import { useParams, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -15,7 +15,7 @@ import {
   RotateCcw,
   Check,
 } from 'lucide-react';
-import { Product } from '@/lib/types';
+import { Product, ProductViewSource } from '@/lib/types';
 import { api } from '@/lib/api';
 import { useEvent } from '@/context/EventContext';
 import { formatPrice, calculateDiscount, getPlaceholderImage } from '@/lib/utils';
@@ -25,8 +25,9 @@ import AddToCartButton from '@/components/cart/AddToCartButton';
 import ProductGrid from '@/components/products/ProductGrid';
 import { PageLoader, Skeleton } from '@/components/ui/Loading';
 
-export default function ProductDetailPage() {
+function ProductDetailContent() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const productId = params.id as string;
 
   const [product, setProduct] = useState<Product | null>(null);
@@ -35,15 +36,54 @@ export default function ProductDetailPage() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const { trackProductView } = useEvent();
 
+  // Track view duration
+  const viewStartTime = useRef<number>(Date.now());
+  const productDataRef = useRef<Product | null>(null);
+  const hasTrackedRef = useRef<boolean>(false);
+
+  // Get source and search query from URL params
+  const source = (searchParams.get('source') as ProductViewSource) || 'direct';
+  const searchQuery = searchParams.get('q') || undefined;
+
+  // Use ref to always have latest trackProductView (avoids stale closure with user auth)
+  const trackProductViewRef = useRef(trackProductView);
+  const sourceRef = useRef(source);
+  const searchQueryRef = useRef(searchQuery);
+
+  // Keep refs updated
+  useEffect(() => {
+    trackProductViewRef.current = trackProductView;
+    sourceRef.current = source;
+    searchQueryRef.current = searchQuery;
+  }, [trackProductView, source, searchQuery]);
+
+  // Function to track product view with duration (uses refs to avoid stale closures)
+  const trackViewWithDuration = useCallback(() => {
+    if (!productDataRef.current || hasTrackedRef.current) return;
+
+    const viewDurationMs = Date.now() - viewStartTime.current;
+    trackProductViewRef.current(
+      productDataRef.current.id,
+      productDataRef.current.name,
+      productDataRef.current.categoryName,
+      productDataRef.current.price,
+      sourceRef.current,
+      searchQueryRef.current,
+      viewDurationMs
+    );
+    hasTrackedRef.current = true;
+  }, []);
+
   useEffect(() => {
     const loadProduct = async () => {
       setIsLoading(true);
+      viewStartTime.current = Date.now();
+      hasTrackedRef.current = false;
+
       try {
         const data = await api.getProduct(productId);
         setProduct(data);
-
-        // Track product view
-        trackProductView(data.id, data.name, data.categoryName, data.price);
+        productDataRef.current = data;
 
         // Load related products
         if (data.categoryId) {
@@ -58,7 +98,29 @@ export default function ProductDetailPage() {
     };
 
     loadProduct();
-  }, [productId, trackProductView]);
+  }, [productId]);
+
+  // Track view on unmount or visibility change
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        trackViewWithDuration();
+      }
+    };
+
+    const handleBeforeUnload = () => {
+      trackViewWithDuration();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      trackViewWithDuration();
+    };
+  }, [trackViewWithDuration]);
 
   if (isLoading) {
     return <PageLoader />;
@@ -270,6 +332,7 @@ export default function ProductDetailPage() {
                 productName={product.name}
                 price={product.price}
                 inStock={product.inStock}
+                category={product.categoryName}
                 size="lg"
               />
             </div>
@@ -327,10 +390,18 @@ export default function ProductDetailPage() {
         {relatedProducts.length > 0 && (
           <section className="mt-16 pt-16 border-t border-surface-200">
             <h2 className="text-2xl font-bold text-surface-900 mb-8">You May Also Like</h2>
-            <ProductGrid products={relatedProducts} />
+            <ProductGrid products={relatedProducts} source="recommendation" />
           </section>
         )}
       </div>
     </div>
+  );
+}
+
+export default function ProductDetailPage() {
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <ProductDetailContent />
+    </Suspense>
   );
 }

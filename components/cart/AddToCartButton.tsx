@@ -12,6 +12,7 @@ interface AddToCartButtonProps {
   productName: string;
   price: number;
   inStock: boolean;
+  category?: string;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
   showQuantity?: boolean;
@@ -22,6 +23,7 @@ export default function AddToCartButton({
   productName,
   price,
   inStock,
+  category,
   className,
   size = 'md',
   showQuantity = true,
@@ -37,7 +39,7 @@ export default function AddToCartButton({
       return;
     }
 
-    await addToCart(productId, quantity, productName, price);
+    await addToCart(productId, quantity, productName, price, category);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };

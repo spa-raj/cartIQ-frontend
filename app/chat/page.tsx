@@ -95,7 +95,7 @@ export default function ChatPage() {
       window.location.href = '/auth/login?redirect=/chat';
       return;
     }
-    await addToCart(recommendation.productId, 1, recommendation.name, recommendation.price);
+    await addToCart(recommendation.productId, 1, recommendation.name, recommendation.price, recommendation.category);
   };
 
   const suggestedQuestions = [
@@ -171,7 +171,7 @@ export default function ChatPage() {
                       className="bg-white border border-surface-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow"
                     >
                       <div className="flex gap-4">
-                        <Link href={`/products/${rec.productId}`}>
+                        <Link href={`/products/${rec.productId}?source=recommendation`}>
                           <div className="relative h-20 w-20 rounded-lg overflow-hidden bg-surface-100 flex-shrink-0">
                             <Image
                               src={rec.thumbnailUrl || getPlaceholderImage(80, 80)}
@@ -184,7 +184,7 @@ export default function ChatPage() {
                         </Link>
                         <div className="flex-1 min-w-0">
                           <Link
-                            href={`/products/${rec.productId}`}
+                            href={`/products/${rec.productId}?source=recommendation`}
                             className="font-medium text-surface-900 hover:text-primary-600 line-clamp-2"
                           >
                             {rec.name}

@@ -217,7 +217,7 @@ export default function HomePage() {
                 featuredProducts.slice(0, 8).map((product) => (
                   <Link
                     key={product.id}
-                    href={`/products/${product.id}`}
+                    href={`/products/${product.id}?source=home`}
                     className="flex-shrink-0 w-[180px] p-4 border-r border-gray-100 hover:shadow-lg transition-shadow text-center group"
                   >
                     <div className="h-32 flex items-center justify-center mb-3">
@@ -324,7 +324,7 @@ export default function HomePage() {
                 electronicsProducts.slice(0, 4).map((product) => (
                   <Link
                     key={product.id}
-                    href={`/products/${product.id}`}
+                    href={`/products/${product.id}?source=home`}
                     className="p-4 hover:shadow-lg transition-shadow text-center group border border-gray-100 rounded-sm"
                   >
                     <div className="h-32 flex items-center justify-center mb-3">
@@ -388,7 +388,7 @@ export default function HomePage() {
               {featuredProducts.slice(4, 10).map((product) => (
                 <Link
                   key={product.id}
-                  href={`/products/${product.id}`}
+                  href={`/products/${product.id}?source=home`}
                   className="p-4 hover:shadow-lg transition-shadow text-center group"
                 >
                   <div className="h-32 flex items-center justify-center mb-3">

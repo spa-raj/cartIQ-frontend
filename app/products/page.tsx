@@ -101,6 +101,8 @@ function ProductsPageContent() {
             <ProductGrid
               products={products}
               isLoading={isLoading}
+              source={search ? 'search' : categoryId ? 'category' : 'direct'}
+              searchQuery={search || undefined}
               emptyMessage={
                 search
                   ? `No products found for "${search}". Try adjusting your search.`

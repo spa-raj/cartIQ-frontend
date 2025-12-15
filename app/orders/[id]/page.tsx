@@ -21,6 +21,7 @@ import { Order } from '@/lib/types';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { useEvent } from '@/context/EventContext';
+import { useCart } from '@/context/CartContext';
 import {
   formatPrice,
   formatDate,
@@ -42,6 +43,7 @@ function OrderDetailContent() {
 
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { trackPageView, trackOrderEvent } = useEvent();
+  const { productCategoryMap } = useCart();
 
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -88,14 +90,15 @@ function OrderDetailContent() {
         items: order.items?.map(item => ({
           productId: item.productId,
           productName: item.productName,
+          category: productCategoryMap[item.productId],
           quantity: item.quantity,
-          unitPrice: item.unitPrice,
+          price: item.unitPrice,
         })) || [],
         subtotal: order.subtotal,
         discount: 0,
         total: order.totalAmount,
-        paymentMethod: 'COD',
-        status: updatedOrder.status,
+        paymentMethod: 'cod',
+        status: updatedOrder.status.toLowerCase() as 'pending' | 'placed' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded',
         shippingCity: order.shippingCity || '',
         shippingState: order.shippingState || '',
       });
@@ -236,7 +239,7 @@ function OrderDetailContent() {
                     key={item.id}
                     className="flex gap-4 pb-4 border-b border-surface-100 last:border-0 last:pb-0"
                   >
-                    <Link href={`/products/${item.productId}`}>
+                    <Link href={`/products/${item.productId}?source=direct`}>
                       <div className="relative h-20 w-20 rounded-lg overflow-hidden bg-surface-100 flex-shrink-0">
                         <Image
                           src={item.thumbnailUrl || getPlaceholderImage(80, 80)}
@@ -249,7 +252,7 @@ function OrderDetailContent() {
                     </Link>
                     <div className="flex-1 min-w-0">
                       <Link
-                        href={`/products/${item.productId}`}
+                        href={`/products/${item.productId}?source=direct`}
                         className="font-medium text-surface-900 hover:text-primary-600 line-clamp-2"
                       >
                         {item.productName}

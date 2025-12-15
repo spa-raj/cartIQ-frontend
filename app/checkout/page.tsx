@@ -16,7 +16,7 @@ import { PageLoader } from '@/components/ui/Loading';
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { cart, refreshCart } = useCart();
+  const { cart, refreshCart, productCategoryMap } = useCart();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { trackPageView, trackOrderEvent } = useEvent();
 
@@ -75,14 +75,15 @@ export default function CheckoutPage() {
         items: order.items?.map(item => ({
           productId: item.productId,
           productName: item.productName,
+          category: productCategoryMap[item.productId],
           quantity: item.quantity,
-          unitPrice: item.unitPrice,
+          price: item.unitPrice,
         })) || [],
         subtotal: order.subtotal,
         discount: 0, // No discount field in current order response
         total: order.totalAmount,
-        paymentMethod: 'COD', // Default to Cash on Delivery
-        status: order.status,
+        paymentMethod: 'cod',
+        status: order.status.toLowerCase() as 'pending' | 'placed' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded',
         shippingCity: order.shippingCity || formData.shippingCity,
         shippingState: order.shippingState || formData.shippingState || '',
       });

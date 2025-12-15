@@ -27,7 +27,7 @@ export default function CartItem({ item }: CartItemProps) {
   return (
     <div className="flex gap-4 p-4 bg-white rounded-xl border border-surface-200">
       {/* Product Image */}
-      <Link href={`/products/${item.productId}`} className="flex-shrink-0">
+      <Link href={`/products/${item.productId}?source=cart`} className="flex-shrink-0">
         <div className="relative h-24 w-24 rounded-lg overflow-hidden bg-surface-100">
           <Image
             src={item.thumbnailUrl || getPlaceholderImage(100, 100)}
@@ -42,7 +42,7 @@ export default function CartItem({ item }: CartItemProps) {
       {/* Product Details */}
       <div className="flex-1 min-w-0">
         <Link
-          href={`/products/${item.productId}`}
+          href={`/products/${item.productId}?source=cart`}
           className="text-surface-900 font-medium hover:text-primary-600 transition-colors line-clamp-2"
         >
           {item.productName}

@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Star, ShoppingCart, Heart, Zap } from 'lucide-react';
-import { Product } from '@/lib/types';
+import { Product, ProductViewSource } from '@/lib/types';
 import { formatPrice, calculateDiscount, getPlaceholderImage, truncateText } from '@/lib/utils';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
@@ -12,10 +12,12 @@ import Button from '@/components/ui/Button';
 
 interface ProductCardProps {
   product: Product;
+  source?: ProductViewSource;
+  searchQuery?: string;
   onQuickView?: (product: Product) => void;
 }
 
-export default function ProductCard({ product, onQuickView }: ProductCardProps) {
+export default function ProductCard({ product, source = 'direct', searchQuery, onQuickView }: ProductCardProps) {
   const { addToCart, isLoading } = useCart();
   const { isAuthenticated } = useAuth();
 
@@ -28,15 +30,18 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
       return;
     }
 
-    await addToCart(product.id, 1, product.name, product.price);
+    await addToCart(product.id, 1, product.name, product.price, product.categoryName);
   };
 
   const discountPercent = product.compareAtPrice
     ? calculateDiscount(product.compareAtPrice, product.price)
     : 0;
 
+  // Build product URL with source tracking
+  const productUrl = `/products/${product.id}?source=${source}${searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : ''}`;
+
   return (
-    <Link href={`/products/${product.id}`} className="group block">
+    <Link href={productUrl} className="group block">
       <div className="bg-white rounded-lg border border-surface-200 overflow-hidden transition-all duration-300 hover:shadow-lg hover:border-surface-300 h-full flex flex-col">
         {/* Image */}
         <div className="relative aspect-square overflow-hidden bg-white p-4">

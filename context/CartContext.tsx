@@ -10,7 +10,8 @@ interface CartContextType {
   cart: Cart | null;
   isLoading: boolean;
   itemCount: number;
-  addToCart: (productId: string, quantity: number, productName?: string, price?: number) => Promise<void>;
+  productCategoryMap: Record<string, string>;
+  addToCart: (productId: string, quantity: number, productName?: string, price?: number, category?: string) => Promise<void>;
   updateQuantity: (itemId: string, quantity: number) => Promise<void>;
   removeItem: (itemId: string, productName?: string) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -22,6 +23,8 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<Cart | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  // Store product category mapping for event tracking (backend cart doesn't include category)
+  const [productCategoryMap, setProductCategoryMap] = useState<Record<string, string>>({});
   const { isAuthenticated } = useAuth();
   const { trackCartEvent } = useEvent();
 
@@ -47,19 +50,27 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     loadCart();
   }, [loadCart]);
 
-  const addToCart = async (productId: string, quantity: number, productName?: string, price?: number) => {
+  const addToCart = async (productId: string, quantity: number, productName?: string, price?: number, category?: string) => {
     setIsLoading(true);
     try {
       const updatedCart = await api.addToCart({ productId, quantity });
       setCart(updatedCart);
 
+      // Store category mapping for future event tracking
+      if (category) {
+        setProductCategoryMap(prev => ({ ...prev, [productId]: category }));
+      }
+
       // Track event
       trackCartEvent({
-        action: 'ADD',
+        action: 'add',
         productId,
         productName,
+        category,
         quantity,
         price,
+        cartTotal: updatedCart.totalAmount,
+        cartItemCount: updatedCart.totalItems,
       });
     } finally {
       setIsLoading(false);
@@ -69,17 +80,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const updateQuantity = async (itemId: string, quantity: number) => {
     setIsLoading(true);
     try {
+      const item = cart?.items.find(i => i.id === itemId);
       const updatedCart = await api.updateCartItem(itemId, { quantity });
       setCart(updatedCart);
 
       // Track event
-      const item = cart?.items.find(i => i.id === itemId);
       trackCartEvent({
-        action: 'UPDATE',
+        action: 'update_quantity',
         productId: item?.productId,
         productName: item?.productName,
+        category: item?.productId ? productCategoryMap[item.productId] : undefined,
         quantity,
         price: item?.unitPrice,
+        cartTotal: updatedCart.totalAmount,
+        cartItemCount: updatedCart.totalItems,
       });
     } finally {
       setIsLoading(false);
@@ -95,12 +109,23 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
       // Track event
       trackCartEvent({
-        action: 'REMOVE',
+        action: 'remove',
         productId: item?.productId,
         productName: productName || item?.productName,
+        category: item?.productId ? productCategoryMap[item.productId] : undefined,
         quantity: item?.quantity,
         price: item?.unitPrice,
+        cartTotal: updatedCart.totalAmount,
+        cartItemCount: updatedCart.totalItems,
       });
+
+      // Clean up category mapping for removed product
+      if (item?.productId) {
+        setProductCategoryMap(prev => {
+          const { [item.productId]: _, ...rest } = prev;
+          return rest;
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -109,11 +134,41 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const clearCart = async () => {
     setIsLoading(true);
     try {
+      // Capture cart items before clearing for event tracking
+      const itemsBeforeClear = cart?.items || [];
+      const previousTotal = cart?.totalAmount;
+      const previousItemCount = cart?.totalItems;
+
       await api.clearCart();
       setCart(cart ? { ...cart, items: [], totalAmount: 0, totalItems: 0 } : null);
 
-      // Track event
-      trackCartEvent({ action: 'CLEAR' });
+      // Track remove event for each item being cleared
+      itemsBeforeClear.forEach((item, index) => {
+        const isLastItem = index === itemsBeforeClear.length - 1;
+        trackCartEvent({
+          action: 'clear',
+          productId: item.productId,
+          productName: item.productName,
+          category: productCategoryMap[item.productId],
+          quantity: item.quantity,
+          price: item.unitPrice,
+          // Only the last item event shows the final state (empty cart)
+          cartTotal: isLastItem ? 0 : previousTotal,
+          cartItemCount: isLastItem ? 0 : previousItemCount,
+        });
+      });
+
+      // If cart was already empty, still send a clear event
+      if (itemsBeforeClear.length === 0) {
+        trackCartEvent({
+          action: 'clear',
+          cartTotal: 0,
+          cartItemCount: 0,
+        });
+      }
+
+      // Clear category mapping
+      setProductCategoryMap({});
     } finally {
       setIsLoading(false);
     }
@@ -131,6 +186,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         cart,
         isLoading,
         itemCount,
+        productCategoryMap,
         addToCart,
         updateQuantity,
         removeItem,

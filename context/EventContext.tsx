@@ -8,24 +8,27 @@ import { useAuth } from './AuthContext';
 interface EventContextType {
   sessionId: string;
   trackPageView: (pageType: string, pagePath?: string) => void;
-  trackProductView: (productId: string, productName: string, category?: string, price?: number) => void;
+  trackProductView: (productId: string, productName: string, category?: string, price?: number, source?: 'search' | 'category' | 'home' | 'recommendation' | 'direct' | 'cart', searchQuery?: string, viewDurationMs?: number) => void;
   trackCartEvent: (data: {
-    action: 'ADD' | 'REMOVE' | 'UPDATE' | 'CLEAR';
+    action: 'add' | 'remove' | 'update_quantity' | 'clear';
     productId?: string;
     productName?: string;
+    category?: string;
     quantity?: number;
     price?: number;
+    cartTotal?: number;
+    cartItemCount?: number;
   }) => void;
   trackOrderEvent: (data: {
     action: 'PLACED' | 'CANCELLED' | 'COMPLETED';
     orderId: string;
     orderNumber: string;
-    items: { productId: string; productName: string; quantity: number; unitPrice: number }[];
+    items: { productId: string; productName: string; category?: string; quantity: number; price: number }[];
     subtotal: number;
     discount: number;
     total: number;
-    paymentMethod: string;
-    status: string;
+    paymentMethod: 'cod' | 'card' | 'upi' | 'netbanking' | 'wallet';
+    status: 'pending' | 'placed' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
     shippingCity: string;
     shippingState: string;
   }) => void;
@@ -83,7 +86,7 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
   );
 
   const trackProductView = useCallback(
-    (productId: string, productName: string, category?: string, price?: number) => {
+    (productId: string, productName: string, category?: string, price?: number, source?: 'search' | 'category' | 'home' | 'recommendation' | 'direct' | 'cart', searchQuery?: string, viewDurationMs?: number) => {
       if (!sessionId) return;
 
       api
@@ -94,6 +97,9 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
           productName,
           category,
           price: price || 0,
+          source,
+          searchQuery,
+          viewDurationMs,
         })
         .catch((error) => {
           console.debug('Failed to track product view:', error);
@@ -104,11 +110,14 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
 
   const trackCartEvent = useCallback(
     (data: {
-      action: 'ADD' | 'REMOVE' | 'UPDATE' | 'CLEAR';
+      action: 'add' | 'remove' | 'update_quantity' | 'clear';
       productId?: string;
       productName?: string;
+      category?: string;
       quantity?: number;
       price?: number;
+      cartTotal?: number;
+      cartItemCount?: number;
     }) => {
       if (!sessionId) return;
 
@@ -130,12 +139,12 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
       action: 'PLACED' | 'CANCELLED' | 'COMPLETED';
       orderId: string;
       orderNumber: string;
-      items: { productId: string; productName: string; quantity: number; unitPrice: number }[];
+      items: { productId: string; productName: string; category?: string; quantity: number; price: number }[];
       subtotal: number;
       discount: number;
       total: number;
-      paymentMethod: string;
-      status: string;
+      paymentMethod: 'cod' | 'card' | 'upi' | 'netbanking' | 'wallet';
+      status: 'pending' | 'placed' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
       shippingCity: string;
       shippingState: string;
     }) => {

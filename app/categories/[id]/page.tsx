@@ -128,6 +128,7 @@ export default function CategoryPage() {
             <ProductGrid
               products={products}
               isLoading={isLoading}
+              source="category"
               emptyMessage={`No products found in ${category.name}. Check back soon!`}
             />
 

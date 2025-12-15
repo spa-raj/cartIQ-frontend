@@ -202,6 +202,7 @@ export interface ProductRecommendation {
   name: string;
   price: number;
   thumbnailUrl?: string;
+  category?: string;
   reason: string;
 }
 
@@ -229,27 +230,43 @@ export interface UserEvent extends BaseEvent {
   pagePath?: string;
 }
 
+export type ProductViewSource = 'search' | 'category' | 'home' | 'recommendation' | 'direct' | 'cart';
+
 export interface ProductViewEvent extends BaseEvent {
   productId: string;
   productName: string;
   category?: string;
   price: number;
+  source?: ProductViewSource;
+  searchQuery?: string;
+  viewDurationMs?: number;
 }
 
+// Backend expects lowercase enum values for cart events
+export type CartEventAction = 'add' | 'remove' | 'update_quantity' | 'clear';
+
 export interface CartEvent extends BaseEvent {
-  action: 'ADD' | 'REMOVE' | 'UPDATE' | 'CLEAR';
+  action: CartEventAction;
   productId?: string;
   productName?: string;
+  category?: string;
   quantity?: number;
   price?: number;
+  cartTotal?: number;
+  cartItemCount?: number;
 }
 
 export interface OrderEventItem {
   productId: string;
   productName: string;
+  category?: string;
   quantity: number;
-  unitPrice: number;
+  price: number;
 }
+
+// Backend expects lowercase enum values for order events
+export type OrderEventStatus = 'pending' | 'placed' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
+export type OrderEventPaymentMethod = 'cod' | 'card' | 'upi' | 'netbanking' | 'wallet';
 
 export interface OrderEvent extends BaseEvent {
   action: 'PLACED' | 'CANCELLED' | 'COMPLETED';
@@ -259,8 +276,8 @@ export interface OrderEvent extends BaseEvent {
   subtotal: number;
   discount: number;
   total: number;
-  paymentMethod: string;
-  status: string;
+  paymentMethod: OrderEventPaymentMethod;
+  status: OrderEventStatus;
   shippingCity: string;
   shippingState: string;
 }
