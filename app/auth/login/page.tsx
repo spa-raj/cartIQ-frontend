@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, Mail, Lock, Sparkles } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useEvent } from '@/context/EventContext';
+import { api } from '@/lib/api';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { isValidEmail } from '@/lib/utils';
@@ -15,7 +16,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
   const { login } = useAuth();
-  const { trackPageView } = useEvent();
+  const { trackPageView, trackUserProfile } = useEvent();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -55,6 +56,54 @@ function LoginForm() {
 
     try {
       await login(formData);
+
+      // Track user profile event after successful login
+      try {
+        const [prefsData, ordersData] = await Promise.all([
+          api.getPreferences().catch(() => null),
+          api.getOrders(0, 100).catch(() => null),
+        ]);
+
+        const totalOrders = ordersData?.totalElements || 0;
+        const totalSpent = ordersData?.content?.reduce((sum, order) => sum + order.totalAmount, 0) || 0;
+
+        // Calculate top categories from order history
+        let topCategories: string[] = [];
+        if (ordersData?.content && ordersData.content.length > 0) {
+          const productIds = new Set<string>();
+          ordersData.content.forEach(order => {
+            order.items?.forEach(item => productIds.add(item.productId));
+          });
+
+          if (productIds.size > 0) {
+            const products = await api.getProductsByIds(Array.from(productIds)).catch(() => []);
+            const categoryCount: Record<string, number> = {};
+            ordersData.content.forEach(order => {
+              order.items?.forEach(item => {
+                const product = products.find(p => p.id === item.productId);
+                if (product?.categoryName) {
+                  categoryCount[product.categoryName] = (categoryCount[product.categoryName] || 0) + item.quantity;
+                }
+              });
+            });
+            topCategories = Object.entries(categoryCount)
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 5)
+              .map(([category]) => category);
+          }
+        }
+
+        trackUserProfile({
+          topCategories,
+          minPricePreference: prefsData?.minPricePreference,
+          maxPricePreference: prefsData?.maxPricePreference,
+          totalOrders,
+          totalSpent,
+        });
+      } catch (profileError) {
+        console.debug('Failed to track user profile on login:', profileError);
+      }
+
       router.push(redirect);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');

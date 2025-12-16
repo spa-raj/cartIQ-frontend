@@ -234,7 +234,7 @@ function OrderDetailContent() {
               <h2 className="text-lg font-semibold text-surface-900 mb-4">Order Items</h2>
 
               <div className="space-y-4">
-                {order.items.map((item) => (
+                {order.items?.map((item) => (
                   <div
                     key={item.id}
                     className="flex gap-4 pb-4 border-b border-surface-100 last:border-0 last:pb-0"

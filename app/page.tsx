@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Product, Category } from '@/lib/types';
 import { api } from '@/lib/api';
+import { calculateDiscount } from '@/lib/utils';
 import { useEvent } from '@/context/EventContext';
 import { Skeleton } from '@/components/ui/Loading';
 
@@ -412,8 +413,8 @@ export default function HomePage() {
                   <p className="text-sm font-bold text-gray-900">
                     ₹{formatPrice(product.price)}
                   </p>
-                  {product.discount && product.discount > 0 && (
-                    <p className="text-xs text-green-600 font-medium">{product.discount}% off</p>
+                  {product.compareAtPrice && product.compareAtPrice > product.price && (
+                    <p className="text-xs text-green-600 font-medium">{calculateDiscount(product.compareAtPrice, product.price)}% off</p>
                   )}
                 </Link>
               ))}

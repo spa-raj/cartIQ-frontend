@@ -287,6 +287,19 @@ export interface OrderEvent extends BaseEvent {
   shippingState: string;
 }
 
+// User Profile Event (for Kafka)
+export type PricePreference = 'budget' | 'mid' | 'premium' | 'luxury';
+
+export interface UserProfileEvent {
+  userId: string;
+  topCategories: string[];
+  pricePreference: PricePreference;
+  totalOrders: number;
+  totalSpent: number;
+  sessionCount: number;
+  lastActive: string;
+}
+
 // API Error
 export interface ApiError {
   error: string;

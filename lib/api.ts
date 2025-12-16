@@ -18,6 +18,7 @@ import {
   ProductViewEvent,
   CartEvent,
   OrderEvent,
+  UserProfileEvent,
 } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8082';
@@ -325,6 +326,30 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify(fullEvent),
     }, true);
+  }
+
+  async trackUserProfileEvent(event: UserProfileEvent): Promise<void> {
+    // Use fetch with keepalive to prevent "Broken pipe" errors
+    // keepalive allows the request to outlive the page/component lifecycle
+    const url = `${API_URL}/api/events/user-profile`;
+    const headers = this.getHeaders(true);
+
+    console.log('API trackUserProfileEvent - URL:', url);
+    console.log('API trackUserProfileEvent - Headers:', headers);
+    console.log('API trackUserProfileEvent - Body:', JSON.stringify(event));
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(event),
+        keepalive: true, // Ensures request completes even if page unloads
+      });
+      console.log('API trackUserProfileEvent - Response status:', response.status);
+    } catch (error) {
+      console.error('API trackUserProfileEvent - Error:', error);
+      throw error;
+    }
   }
 }
 
