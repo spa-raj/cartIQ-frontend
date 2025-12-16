@@ -79,6 +79,11 @@ export default function Header() {
                 onMouseLeave={() => setIsLoginDropdownOpen(false)}
               >
                 <button
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      router.push('/auth/login');
+                    }
+                  }}
                   className="hidden lg:flex items-center gap-1 px-4 py-1.5 bg-white text-gray-900 font-medium text-sm rounded-sm border border-gray-200 hover:border-[#2874f0] transition-colors"
                 >
                   <User className="h-4 w-4" />

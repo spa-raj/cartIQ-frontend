@@ -55,12 +55,14 @@ function ProductsPageContent() {
           response = await api.getProducts(page, 20, sort);
         }
 
-        setProducts(response.content);
-        setTotalPages(response.totalPages);
-        setTotalElements(response.totalElements);
+        setProducts(response.content || []);
+        setTotalPages(response.totalPages || 0);
+        setTotalElements(response.totalElements || 0);
       } catch (error) {
         console.error('Failed to load products:', error);
         setProducts([]);
+        setTotalPages(0);
+        setTotalElements(0);
       } finally {
         setIsLoading(false);
       }
@@ -79,11 +81,21 @@ function ProductsPageContent() {
     <div className="min-h-screen bg-surface-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-surface-900">{getPageTitle()}</h1>
-          {!isLoading && (
-            <p className="text-surface-500 mt-2">
-              {totalElements} {totalElements === 1 ? 'product' : 'products'} found
+        <div className="mb-6">
+          {search ? (
+            // Search results header
+            <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3">
+              <h1 className="text-2xl sm:text-3xl font-bold text-surface-900">
+                Search results for
+              </h1>
+              <span className="text-2xl sm:text-3xl font-bold text-primary-600">"{search}"</span>
+            </div>
+          ) : (
+            <h1 className="text-2xl sm:text-3xl font-bold text-surface-900">{getPageTitle()}</h1>
+          )}
+          {!isLoading && totalElements !== undefined && (
+            <p className="text-surface-500 mt-1 text-sm">
+              Showing <span className="font-medium text-surface-700">{(totalElements || 0).toLocaleString()}</span> {totalElements === 1 ? 'product' : 'products'}
             </p>
           )}
         </div>
