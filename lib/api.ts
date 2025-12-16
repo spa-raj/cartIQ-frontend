@@ -18,8 +18,8 @@ import {
   ProductViewEvent,
   CartEvent,
   OrderEvent,
-  UserProfileEvent,
 } from './types';
+import { generateSessionId } from './utils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8082';
 
@@ -280,7 +280,9 @@ class ApiClient {
   }
 
   // Event Tracking APIs
+  // All event tracking methods send sessionId via X-Session-Id header (required by backend)
   async trackUserEvent(event: Omit<UserEvent, 'eventId' | 'timestamp'>): Promise<void> {
+    const sessionId = event.sessionId || generateSessionId();
     const fullEvent: UserEvent = {
       ...event,
       eventId: crypto.randomUUID(),
@@ -288,11 +290,13 @@ class ApiClient {
     };
     return this.request<void>('/api/events/user', {
       method: 'POST',
+      headers: { 'X-Session-Id': sessionId },
       body: JSON.stringify(fullEvent),
     }, true);
   }
 
   async trackProductView(event: Omit<ProductViewEvent, 'eventId' | 'timestamp'>): Promise<void> {
+    const sessionId = event.sessionId || generateSessionId();
     const fullEvent: ProductViewEvent = {
       ...event,
       eventId: crypto.randomUUID(),
@@ -300,11 +304,13 @@ class ApiClient {
     };
     return this.request<void>('/api/events/product-view', {
       method: 'POST',
+      headers: { 'X-Session-Id': sessionId },
       body: JSON.stringify(fullEvent),
     }, true);
   }
 
   async trackCartEvent(event: Omit<CartEvent, 'eventId' | 'timestamp'>): Promise<void> {
+    const sessionId = event.sessionId || generateSessionId();
     const fullEvent: CartEvent = {
       ...event,
       eventId: crypto.randomUUID(),
@@ -312,11 +318,13 @@ class ApiClient {
     };
     return this.request<void>('/api/events/cart', {
       method: 'POST',
+      headers: { 'X-Session-Id': sessionId },
       body: JSON.stringify(fullEvent),
     }, true);
   }
 
   async trackOrderEvent(event: Omit<OrderEvent, 'eventId' | 'timestamp'>): Promise<void> {
+    const sessionId = event.sessionId || generateSessionId();
     const fullEvent: OrderEvent = {
       ...event,
       eventId: crypto.randomUUID(),
@@ -324,6 +332,7 @@ class ApiClient {
     };
     return this.request<void>('/api/events/order', {
       method: 'POST',
+      headers: { 'X-Session-Id': sessionId },
       body: JSON.stringify(fullEvent),
     }, true);
   }
