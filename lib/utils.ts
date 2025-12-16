@@ -45,17 +45,29 @@ export function truncateText(text: string, maxLength: number): string {
   return text.slice(0, maxLength).trim() + '...';
 }
 
-// Generate session ID
+// Module-level cache for sessionId to ensure consistency across all calls
+let cachedSessionId: string | null = null;
+
+// Generate session ID - returns the SAME sessionId for the entire browser session
 export function generateSessionId(): string {
+  // Return cached value if available (ensures same ID across all calls)
+  if (cachedSessionId) {
+    return cachedSessionId;
+  }
+
+  // Only access sessionStorage on client side
   if (typeof window !== 'undefined') {
     let sessionId = sessionStorage.getItem('cartiq_session_id');
     if (!sessionId) {
       sessionId = crypto.randomUUID();
       sessionStorage.setItem('cartiq_session_id', sessionId);
     }
+    cachedSessionId = sessionId;
     return sessionId;
   }
-  return crypto.randomUUID();
+
+  // Server-side: return empty string (events won't be sent without valid sessionId)
+  return '';
 }
 
 // Get order status color

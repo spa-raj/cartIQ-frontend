@@ -4,7 +4,7 @@ import React, { createContext, useContext, useCallback, useEffect, useState } fr
 import { api } from '@/lib/api';
 import { generateSessionId } from '@/lib/utils';
 import { useAuth } from './AuthContext';
-import { DeviceType, PricePreference, UserProfileEvent } from '@/lib/types';
+import { DeviceType } from '@/lib/types';
 
 // Helper to detect device type from user agent
 const getDeviceType = (): DeviceType => {
@@ -18,17 +18,6 @@ const getDeviceType = (): DeviceType => {
     return 'mobile';
   }
   return 'desktop';
-};
-
-// Helper to determine price preference from min/max values
-const getPricePreference = (minPrice?: number, maxPrice?: number): PricePreference => {
-  // Use max price if available, otherwise use min price
-  const referencePrice = maxPrice ?? minPrice ?? 0;
-
-  if (referencePrice <= 500) return 'budget';
-  if (referencePrice <= 2000) return 'mid';
-  if (referencePrice <= 5000) return 'premium';
-  return 'luxury';
 };
 
 interface EventContextType {
@@ -58,13 +47,6 @@ interface EventContextType {
     shippingCity: string;
     shippingState: string;
   }) => void;
-  trackUserProfile: (data: {
-    topCategories?: string[];
-    minPricePreference?: number;
-    maxPricePreference?: number;
-    totalOrders?: number;
-    totalSpent?: number;
-  }) => void;
 }
 
 const EventContext = createContext<EventContextType | undefined>(undefined);
@@ -91,19 +73,21 @@ const mapPageType = (pageType: string): string => {
 };
 
 export function EventProvider({ children }: { children: React.ReactNode }) {
-  const [sessionId, setSessionId] = useState<string>('');
-  const [sessionCount, setSessionCount] = useState<number>(1);
+  // Initialize sessionId immediately on client-side to avoid race conditions
+  const [sessionId, setSessionId] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return generateSessionId();
+    }
+    return '';
+  });
   const { user } = useAuth();
 
   useEffect(() => {
-    // Generate or retrieve session ID on client side
-    setSessionId(generateSessionId());
-
-    // Track session count in localStorage
-    const storedCount = localStorage.getItem('cartiq_session_count');
-    const newCount = storedCount ? parseInt(storedCount, 10) + 1 : 1;
-    localStorage.setItem('cartiq_session_count', newCount.toString());
-    setSessionCount(newCount);
+    // Ensure sessionId is set on client side (handles SSR hydration)
+    const id = generateSessionId();
+    if (id && id !== sessionId) {
+      setSessionId(id);
+    }
   }, []);
 
   const trackPageView = useCallback(
@@ -211,45 +195,6 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
     [sessionId, user?.id]
   );
 
-  const trackUserProfile = useCallback(
-    (data: {
-      topCategories?: string[];
-      minPricePreference?: number;
-      maxPricePreference?: number;
-      totalOrders?: number;
-      totalSpent?: number;
-    }) => {
-      console.log('trackUserProfile called, user?.id:', user?.id, 'data:', data);
-
-      if (!user?.id) {
-        console.warn('trackUserProfile: No user id, skipping');
-        return;
-      }
-
-      const profileEvent: UserProfileEvent = {
-        userId: user.id,
-        topCategories: data.topCategories || [],
-        pricePreference: getPricePreference(data.minPricePreference, data.maxPricePreference),
-        totalOrders: data.totalOrders || 0,
-        totalSpent: data.totalSpent || 0,
-        sessionCount: sessionCount,
-        lastActive: new Date().toISOString(),
-      };
-
-      console.log('Sending user profile event:', profileEvent);
-
-      api
-        .trackUserProfileEvent(profileEvent)
-        .then(() => {
-          console.log('User profile event sent successfully');
-        })
-        .catch((error) => {
-          console.error('Failed to track user profile event:', error);
-        });
-    },
-    [user?.id, sessionCount]
-  );
-
   return (
     <EventContext.Provider
       value={{
@@ -258,7 +203,6 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
         trackProductView,
         trackCartEvent,
         trackOrderEvent,
-        trackUserProfile,
       }}
     >
       {children}

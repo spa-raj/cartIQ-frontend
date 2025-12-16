@@ -15,7 +15,7 @@ import { PageLoader } from '@/components/ui/Loading';
 export default function ProfilePage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { trackPageView, trackUserProfile } = useEvent();
+  const { trackPageView } = useEvent();
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -152,15 +152,6 @@ export default function ProfilePage() {
         phone: profileData.phone || undefined,
       });
 
-      // Track user profile event on profile update
-      trackUserProfile({
-        topCategories: orderStats.topCategories,
-        minPricePreference: preferences?.minPricePreference,
-        maxPricePreference: preferences?.maxPricePreference,
-        totalOrders: orderStats.totalOrders,
-        totalSpent: orderStats.totalSpent,
-      });
-
       setSuccess('Profile updated successfully!');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update profile');
@@ -184,15 +175,6 @@ export default function ProfilePage() {
         language: preferences.language,
         minPricePreference: preferences.minPricePreference,
         maxPricePreference: preferences.maxPricePreference,
-      });
-
-      // Track user profile event on preference update
-      trackUserProfile({
-        topCategories: orderStats.topCategories,
-        minPricePreference: preferences.minPricePreference,
-        maxPricePreference: preferences.maxPricePreference,
-        totalOrders: orderStats.totalOrders,
-        totalSpent: orderStats.totalSpent,
       });
 
       setSuccess('Preferences updated successfully!');

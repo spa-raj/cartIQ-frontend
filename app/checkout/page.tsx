@@ -18,7 +18,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { cart, refreshCart, productCategoryMap } = useCart();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { trackPageView, trackOrderEvent, trackUserProfile } = useEvent();
+  const { trackPageView, trackOrderEvent } = useEvent();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,53 +87,6 @@ export default function CheckoutPage() {
         shippingCity: order.shippingCity || formData.shippingCity,
         shippingState: order.shippingState || formData.shippingState || '',
       });
-
-      // Track user profile event on order completion
-      try {
-        const [prefsData, ordersData] = await Promise.all([
-          api.getPreferences().catch(() => null),
-          api.getOrders(0, 100).catch(() => null),
-        ]);
-
-        const totalOrders = ordersData?.totalElements || 0;
-        const totalSpent = ordersData?.content?.reduce((sum, o) => sum + o.totalAmount, 0) || 0;
-
-        // Calculate top categories from order history
-        let topCategories: string[] = [];
-        if (ordersData?.content && ordersData.content.length > 0) {
-          const productIds = new Set<string>();
-          ordersData.content.forEach(o => {
-            o.items?.forEach(item => productIds.add(item.productId));
-          });
-
-          if (productIds.size > 0) {
-            const products = await api.getProductsByIds(Array.from(productIds)).catch(() => []);
-            const categoryCount: Record<string, number> = {};
-            ordersData.content.forEach(o => {
-              o.items?.forEach(item => {
-                const product = products.find(p => p.id === item.productId);
-                if (product?.categoryName) {
-                  categoryCount[product.categoryName] = (categoryCount[product.categoryName] || 0) + item.quantity;
-                }
-              });
-            });
-            topCategories = Object.entries(categoryCount)
-              .sort((a, b) => b[1] - a[1])
-              .slice(0, 5)
-              .map(([category]) => category);
-          }
-        }
-
-        trackUserProfile({
-          topCategories,
-          minPricePreference: prefsData?.minPricePreference,
-          maxPricePreference: prefsData?.maxPricePreference,
-          totalOrders,
-          totalSpent,
-        });
-      } catch (profileError) {
-        console.debug('Failed to track user profile on order:', profileError);
-      }
 
       // Refresh cart
       await refreshCart();

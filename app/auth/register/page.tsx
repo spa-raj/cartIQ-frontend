@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, Mail, Lock, User, Phone, Sparkles, Check } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useEvent } from '@/context/EventContext';
-import { api } from '@/lib/api';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { isValidEmail, validatePassword, validatePhone, formatPhoneToE164 } from '@/lib/utils';
@@ -16,7 +15,7 @@ function RegisterForm() {
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
   const { register } = useAuth();
-  const { trackPageView, trackUserProfile } = useEvent();
+  const { trackPageView } = useEvent();
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -88,14 +87,6 @@ function RegisterForm() {
         password: formData.password,
         phone: formattedPhone || undefined,
       });
-
-      // Track user profile event for new user
-      trackUserProfile({
-        topCategories: [],
-        totalOrders: 0,
-        totalSpent: 0,
-      });
-
       router.push(redirect);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
