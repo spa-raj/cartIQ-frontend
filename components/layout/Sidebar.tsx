@@ -54,11 +54,11 @@ export default function Sidebar({ className }: SidebarProps) {
       <div key={category.id}>
         <div
           className={cn(
-            'flex items-center gap-2 px-3 py-2.5 rounded-lg transition-colors cursor-pointer',
+            'flex items-center gap-1.5 px-2 py-2 rounded-md transition-colors cursor-pointer min-w-0',
             isActive
               ? 'bg-primary-50 text-primary-700'
-              : 'text-surface-700 hover:bg-surface-100',
-            level > 0 && 'ml-4'
+              : 'text-surface-600 hover:bg-surface-50',
+            level > 0 && 'ml-3'
           )}
         >
           {hasSubcategories && (
@@ -67,11 +67,11 @@ export default function Sidebar({ className }: SidebarProps) {
                 e.preventDefault();
                 toggleCategory(category.id);
               }}
-              className="p-0.5 hover:bg-surface-200 rounded transition-colors"
+              className="p-0.5 hover:bg-surface-200 rounded transition-colors flex-shrink-0"
             >
               <ChevronRight
                 className={cn(
-                  'h-4 w-4 transition-transform',
+                  'h-3.5 w-3.5 transition-transform',
                   isExpanded && 'rotate-90'
                 )}
               />
@@ -79,16 +79,16 @@ export default function Sidebar({ className }: SidebarProps) {
           )}
           <Link
             href={`/categories/${category.id}`}
-            className="flex-1 flex items-center gap-2"
+            className="flex-1 flex items-center gap-1.5 min-w-0"
           >
             {isExpanded ? (
-              <FolderOpen className="h-4 w-4 text-secondary-500" />
+              <FolderOpen className="h-3.5 w-3.5 text-secondary-500 flex-shrink-0" />
             ) : (
-              <Folder className="h-4 w-4 text-surface-400" />
+              <Folder className="h-3.5 w-3.5 text-surface-400 flex-shrink-0" />
             )}
-            <span className="text-sm font-medium truncate">{category.name}</span>
+            <span className="text-xs font-medium truncate" title={category.name}>{category.name}</span>
             {category.productCount > 0 && (
-              <span className="ml-auto text-xs text-surface-400">
+              <span className="ml-auto text-[10px] text-surface-400 flex-shrink-0">
                 {category.productCount}
               </span>
             )}
@@ -96,7 +96,7 @@ export default function Sidebar({ className }: SidebarProps) {
         </div>
 
         {hasSubcategories && isExpanded && (
-          <div className="mt-1">
+          <div className="mt-0.5">
             {category.subCategories!.map((sub) => renderCategory(sub, level + 1))}
           </div>
         )}
@@ -105,20 +105,20 @@ export default function Sidebar({ className }: SidebarProps) {
   };
 
   return (
-    <aside className={cn('w-64 flex-shrink-0', className)}>
-      <div className="bg-white rounded-xl border border-surface-200 p-4">
-        <h2 className="text-lg font-semibold text-surface-900 mb-4">Categories</h2>
+    <aside className={cn('w-56 flex-shrink-0', className)}>
+      <div className="bg-white rounded-xl border border-surface-200 p-3 overflow-hidden">
+        <h2 className="text-sm font-semibold text-surface-900 mb-3 px-1">Categories</h2>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-primary-500" />
+          <div className="flex items-center justify-center py-6">
+            <Loader2 className="h-5 w-5 animate-spin text-primary-500" />
           </div>
         ) : categories.length > 0 ? (
-          <nav className="space-y-1">
+          <nav className="space-y-0.5 max-h-[60vh] overflow-y-auto">
             {categories.map((category) => renderCategory(category))}
           </nav>
         ) : (
-          <p className="text-sm text-surface-500 text-center py-4">
+          <p className="text-xs text-surface-500 text-center py-4">
             No categories available
           </p>
         )}

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { SlidersHorizontal, X, ChevronDown } from 'lucide-react';
+import { SlidersHorizontal, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { api } from '@/lib/api';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -24,6 +24,7 @@ export default function ProductFilters({ onFilterChange }: ProductFiltersProps) 
   );
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'createdAt,desc');
   const [showFilters, setShowFilters] = useState(false);
+  const [showAllBrands, setShowAllBrands] = useState(false);
 
   useEffect(() => {
     const loadBrands = async () => {
@@ -73,35 +74,33 @@ export default function ProductFilters({ onFilterChange }: ProductFiltersProps) 
   const hasActiveFilters = minPrice || maxPrice || selectedBrands.length > 0;
 
   return (
-    <div className="mb-6">
+    <div className="mb-4">
       {/* Filter Bar */}
-      <div className="flex flex-wrap items-center gap-4">
+      <div className="flex flex-wrap items-center gap-3">
         {/* Mobile Filter Toggle */}
-        <Button
-          variant="outline"
-          size="sm"
+        <button
           onClick={() => setShowFilters(!showFilters)}
-          leftIcon={<SlidersHorizontal className="h-4 w-4" />}
-          className="lg:hidden"
+          className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-surface-300 rounded-md bg-white hover:bg-surface-50 transition-colors"
         >
+          <SlidersHorizontal className="h-3.5 w-3.5" />
           Filters
           {hasActiveFilters && (
-            <span className="ml-1 h-5 w-5 bg-primary-500 text-white text-xs rounded-full flex items-center justify-center">
+            <span className="ml-1 h-4 w-4 bg-primary-500 text-white text-[10px] rounded-full flex items-center justify-center">
               {(minPrice ? 1 : 0) + (maxPrice ? 1 : 0) + selectedBrands.length}
             </span>
           )}
-        </Button>
+        </button>
 
         {/* Sort Dropdown */}
         <div className="flex items-center gap-2 ml-auto">
-          <span className="text-sm text-surface-600 hidden sm:block">Sort by:</span>
+          <span className="text-xs text-surface-500 hidden sm:block">Sort by:</span>
           <select
             value={sortBy}
             onChange={(e) => {
               setSortBy(e.target.value);
               setTimeout(applyFilters, 0);
             }}
-            className="px-3 py-2 text-sm border border-surface-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="px-2.5 py-1.5 text-xs border border-surface-300 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-primary-500"
           >
             <option value="createdAt,desc">Newest</option>
             <option value="price,asc">Price: Low to High</option>
@@ -113,69 +112,95 @@ export default function ProductFilters({ onFilterChange }: ProductFiltersProps) 
 
         {/* Clear Filters */}
         {hasActiveFilters && (
-          <Button variant="ghost" size="sm" onClick={clearFilters} leftIcon={<X className="h-4 w-4" />}>
-            Clear filters
-          </Button>
+          <button
+            onClick={clearFilters}
+            className="flex items-center gap-1 px-2 py-1 text-xs text-surface-500 hover:text-surface-700 transition-colors"
+          >
+            <X className="h-3 w-3" />
+            Clear
+          </button>
         )}
       </div>
 
       {/* Filter Panel */}
       <div
         className={cn(
-          'mt-4 p-4 bg-white border border-surface-200 rounded-xl transition-all duration-300',
+          'mt-3 p-3 bg-white border border-surface-200 rounded-lg transition-all duration-300',
           showFilters ? 'block' : 'hidden lg:block'
         )}
       >
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="flex flex-wrap items-end gap-4">
           {/* Price Range */}
-          <div>
-            <h4 className="text-sm font-medium text-surface-900 mb-3">Price Range</h4>
-            <div className="flex items-center gap-2">
-              <Input
+          <div className="flex-shrink-0">
+            <h4 className="text-xs font-medium text-surface-700 mb-2">Price Range</h4>
+            <div className="flex items-center gap-1.5">
+              <input
                 type="number"
                 placeholder="Min"
                 value={minPrice}
                 onChange={(e) => setMinPrice(e.target.value)}
-                className="text-sm"
+                className="w-20 px-2 py-1.5 text-xs border border-surface-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
-              <span className="text-surface-400">-</span>
-              <Input
+              <span className="text-surface-400 text-xs">-</span>
+              <input
                 type="number"
                 placeholder="Max"
                 value={maxPrice}
                 onChange={(e) => setMaxPrice(e.target.value)}
-                className="text-sm"
+                className="w-20 px-2 py-1.5 text-xs border border-surface-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
             </div>
           </div>
 
           {/* Brands */}
-          <div>
-            <h4 className="text-sm font-medium text-surface-900 mb-3">Brands</h4>
-            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
-              {brands.map((brand) => (
+          <div className="flex-1 min-w-0">
+            <h4 className="text-xs font-medium text-surface-700 mb-2">Brands</h4>
+            <div className={cn(
+              'flex flex-wrap gap-1.5 overflow-y-auto',
+              !showAllBrands && 'max-h-20'
+            )}>
+              {(showAllBrands ? brands : brands.slice(0, 12)).map((brand) => (
                 <button
                   key={brand}
                   onClick={() => toggleBrand(brand)}
                   className={cn(
-                    'px-3 py-1.5 text-sm rounded-full border transition-colors',
+                    'px-2 py-1 text-xs rounded-md border transition-colors',
                     selectedBrands.includes(brand)
-                      ? 'bg-primary-50 border-primary-500 text-primary-700'
-                      : 'bg-white border-surface-300 text-surface-600 hover:border-surface-400'
+                      ? 'bg-primary-50 border-primary-400 text-primary-700'
+                      : 'bg-surface-50 border-surface-200 text-surface-600 hover:border-surface-300'
                   )}
                 >
                   {brand}
                 </button>
               ))}
             </div>
+            {brands.length > 12 && (
+              <button
+                onClick={() => setShowAllBrands(!showAllBrands)}
+                className="flex items-center gap-1 mt-1.5 text-xs text-primary-600 hover:text-primary-700 transition-colors"
+              >
+                {showAllBrands ? (
+                  <>
+                    <ChevronUp className="h-3 w-3" />
+                    Show less
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="h-3 w-3" />
+                    Show all ({brands.length})
+                  </>
+                )}
+              </button>
+            )}
           </div>
 
           {/* Apply Button */}
-          <div className="flex items-end">
-            <Button variant="primary" onClick={applyFilters} className="w-full md:w-auto">
-              Apply Filters
-            </Button>
-          </div>
+          <button
+            onClick={applyFilters}
+            className="px-4 py-1.5 text-xs font-medium bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
+          >
+            Apply Filters
+          </button>
         </div>
       </div>
     </div>
