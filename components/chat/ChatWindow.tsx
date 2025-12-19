@@ -159,7 +159,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
               <div
                 className={`max-w-[80%] px-4 py-2.5 rounded-2xl ${
                   message.role === 'user'
-                    ? 'bg-primary-600 text-white rounded-br-sm'
+                    ? 'bg-primary-100 text-surface-800 rounded-br-sm'
                     : 'bg-white border border-surface-200 text-surface-800 rounded-bl-sm shadow-sm'
                 }`}
               >
