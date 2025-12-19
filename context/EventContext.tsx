@@ -22,6 +22,8 @@ const getDeviceType = (): DeviceType => {
 
 interface EventContextType {
   sessionId: string;
+  recentlyViewedProductIds: string[];
+  recentCategories: string[];
   trackPageView: (pageType: string, pagePath?: string) => void;
   trackProductView: (productId: string, productName: string, category?: string, price?: number, source?: 'search' | 'category' | 'home' | 'recommendation' | 'direct' | 'cart', searchQuery?: string, viewDurationMs?: number) => void;
   trackCartEvent: (data: {
@@ -72,6 +74,31 @@ const mapPageType = (pageType: string): string => {
   return PAGE_TYPE_MAP[pageType.toUpperCase()] || 'home';
 };
 
+const MAX_RECENT_ITEMS = 10;
+const STORAGE_KEY_PRODUCTS = 'cartiq_recent_products';
+const STORAGE_KEY_CATEGORIES = 'cartiq_recent_categories';
+
+// Helper to safely get from sessionStorage
+const getFromStorage = (key: string): string[] => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const stored = sessionStorage.getItem(key);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+};
+
+// Helper to safely set to sessionStorage
+const setToStorage = (key: string, value: string[]) => {
+  if (typeof window === 'undefined') return;
+  try {
+    sessionStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Ignore storage errors
+  }
+};
+
 export function EventProvider({ children }: { children: React.ReactNode }) {
   // Initialize sessionId immediately on client-side to avoid race conditions
   const [sessionId, setSessionId] = useState<string>(() => {
@@ -80,6 +107,12 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
     }
     return '';
   });
+  const [recentlyViewedProductIds, setRecentlyViewedProductIds] = useState<string[]>(() =>
+    getFromStorage(STORAGE_KEY_PRODUCTS)
+  );
+  const [recentCategories, setRecentCategories] = useState<string[]>(() =>
+    getFromStorage(STORAGE_KEY_CATEGORIES)
+  );
   const { user } = useAuth();
 
   useEffect(() => {
@@ -120,6 +153,24 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
   const trackProductView = useCallback(
     (productId: string, productName: string, category?: string, price?: number, source?: 'search' | 'category' | 'home' | 'recommendation' | 'direct' | 'cart', searchQuery?: string, viewDurationMs?: number) => {
       if (!sessionId) return;
+
+      // Track recently viewed products for chat personalization
+      setRecentlyViewedProductIds(prev => {
+        const filtered = prev.filter(id => id !== productId);
+        const updated = [productId, ...filtered].slice(0, MAX_RECENT_ITEMS);
+        setToStorage(STORAGE_KEY_PRODUCTS, updated);
+        return updated;
+      });
+
+      // Track recent categories for chat personalization
+      if (category) {
+        setRecentCategories(prev => {
+          const filtered = prev.filter(cat => cat !== category);
+          const updated = [category, ...filtered].slice(0, MAX_RECENT_ITEMS);
+          setToStorage(STORAGE_KEY_CATEGORIES, updated);
+          return updated;
+        });
+      }
 
       api
         .trackProductView({
@@ -199,6 +250,8 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
     <EventContext.Provider
       value={{
         sessionId,
+        recentlyViewedProductIds,
+        recentCategories,
         trackPageView,
         trackProductView,
         trackCartEvent,

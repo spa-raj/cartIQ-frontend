@@ -194,26 +194,41 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: string;
-  recommendations?: ProductRecommendation[];
+  products?: ChatProductDTO[];
 }
 
-export interface ProductRecommendation {
-  productId: string;
+export interface ChatProductDTO {
+  id: string;
   name: string;
+  description: string;
   price: number;
+  brand: string;
+  categoryId?: string;
+  categoryName: string;
+  rating: number;
   thumbnailUrl?: string;
-  category?: string;
-  reason: string;
+  inStock: boolean;
 }
+
+export type PricePreferenceType = 'budget' | 'mid-range' | 'premium';
 
 export interface ChatRequest {
   message: string;
-  sessionId: string;
+  userId?: string;
+  recentlyViewedProductIds?: string[];
+  recentCategories?: string[];
+  cartProductIds?: string[];
+  cartTotal?: number;
+  pricePreference?: PricePreferenceType;
+  preferredCategories?: string[];
 }
 
 export interface ChatResponse {
-  response: string;
-  recommendations: ProductRecommendation[];
+  sessionId: string;
+  message: string;
+  products: ChatProductDTO[];
+  hasProducts: boolean;
+  processingTimeMs: number;
 }
 
 // Event Types (for Kafka tracking)

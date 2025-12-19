@@ -272,11 +272,20 @@ class ApiClient {
   }
 
   // Chat API
-  async sendChatMessage(data: ChatRequest): Promise<ChatResponse> {
+  async sendChatMessage(data: ChatRequest, sessionId?: string): Promise<ChatResponse> {
+    const headers: Record<string, string> = {};
+    if (sessionId) {
+      headers['X-Session-Id'] = sessionId;
+    }
     return this.request<ChatResponse>('/api/chat', {
       method: 'POST',
+      headers,
       body: JSON.stringify(data),
     }, true);
+  }
+
+  async checkChatHealth(): Promise<{ status: string }> {
+    return this.request<{ status: string }>('/api/chat/health');
   }
 
   // Event Tracking APIs

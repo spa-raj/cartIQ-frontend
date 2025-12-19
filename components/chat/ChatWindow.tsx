@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, User, Loader2, X, ShoppingCart } from 'lucide-react';
-import { ChatMessage, ProductRecommendation } from '@/lib/types';
+import { Send, Sparkles, User, Loader2, X, ShoppingCart, Star } from 'lucide-react';
+import { ChatMessage, ChatProductDTO } from '@/lib/types';
 import { api } from '@/lib/api';
 import { useEvent } from '@/context/EventContext';
 import { useAuth } from '@/context/AuthContext';
@@ -27,10 +27,11 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [chatSessionId, setChatSessionId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { sessionId, trackPageView } = useEvent();
-  const { isAuthenticated } = useAuth();
-  const { addToCart } = useCart();
+  const { trackPageView, recentlyViewedProductIds, recentCategories } = useEvent();
+  const { isAuthenticated, user } = useAuth();
+  const { addToCart, cart } = useCart();
 
   useEffect(() => {
     trackPageView('CHAT', '/chat');
@@ -56,17 +57,29 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     setIsLoading(true);
 
     try {
-      const response = await api.sendChatMessage({
-        message: userMessage.content,
-        sessionId,
-      });
+      const response = await api.sendChatMessage(
+        {
+          message: userMessage.content,
+          userId: user?.id,
+          recentlyViewedProductIds,
+          recentCategories,
+          cartProductIds: cart?.items?.map(item => item.productId),
+          cartTotal: cart?.totalAmount,
+        },
+        chatSessionId || undefined
+      );
+
+      // Store session ID for conversation continuity
+      if (!chatSessionId && response.sessionId) {
+        setChatSessionId(response.sessionId);
+      }
 
       const assistantMessage: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: response.response,
+        content: response.message,
         timestamp: new Date().toISOString(),
-        recommendations: response.recommendations,
+        products: response.products,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -85,12 +98,16 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
     }
   };
 
-  const handleAddToCart = async (recommendation: ProductRecommendation) => {
+  const handleAddToCart = async (product: ChatProductDTO) => {
     if (!isAuthenticated) {
       window.location.href = '/auth/login?redirect=/chat';
       return;
     }
-    await addToCart(recommendation.productId, 1, recommendation.name, recommendation.price, recommendation.category);
+    try {
+      await addToCart(product.id, 1, product.name, product.price, product.categoryName);
+    } catch (error) {
+      console.error('Failed to add to cart:', error);
+    }
   };
 
   return (
@@ -128,13 +145,13 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
                 className={`h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                   message.role === 'user'
                     ? 'bg-primary-100 text-primary-700'
-                    : 'bg-gradient-to-br from-primary-500 to-primary-700 text-white'
+                    : ''
                 }`}
               >
                 {message.role === 'user' ? (
                   <User className="h-4 w-4" />
                 ) : (
-                  <Sparkles className="h-4 w-4" />
+                  <Sparkles className="h-5 w-5 text-surface-400" />
                 )}
               </div>
 
@@ -152,20 +169,20 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
               </div>
             </div>
 
-            {/* Product Recommendations */}
-            {message.recommendations && message.recommendations.length > 0 && (
+            {/* Product Cards */}
+            {message.products && message.products.length > 0 && (
               <div className="mt-3 ml-11 space-y-2">
-                {message.recommendations.map((rec) => (
+                {message.products.map((product) => (
                   <div
-                    key={rec.productId}
+                    key={product.id}
                     className="bg-white border border-surface-200 rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow"
                   >
                     <div className="flex gap-3">
-                      <Link href={`/products/${rec.productId}?source=recommendation`}>
+                      <Link href={`/products/${product.id}?source=recommendation`}>
                         <div className="relative h-16 w-16 rounded-lg overflow-hidden bg-surface-100 flex-shrink-0">
                           <Image
-                            src={rec.thumbnailUrl || getPlaceholderImage(80, 80)}
-                            alt={rec.name}
+                            src={product.thumbnailUrl || getPlaceholderImage(80, 80)}
+                            alt={product.name}
                             fill
                             className="object-cover"
                             sizes="64px"
@@ -174,25 +191,35 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
                       </Link>
                       <div className="flex-1 min-w-0">
                         <Link
-                          href={`/products/${rec.productId}?source=recommendation`}
+                          href={`/products/${product.id}?source=recommendation`}
                           className="text-sm font-medium text-surface-900 hover:text-primary-600 line-clamp-1"
                         >
-                          {rec.name}
+                          {product.name}
                         </Link>
-                        <p className="text-xs text-surface-500 line-clamp-1 mt-0.5">
-                          {rec.reason}
-                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-xs text-surface-500">{product.brand}</span>
+                          {product.rating > 0 && (
+                            <span className="flex items-center gap-0.5 text-xs text-yellow-600">
+                              <Star className="h-3 w-3 fill-current" />
+                              {product.rating.toFixed(1)}
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center justify-between mt-2">
                           <span className="text-sm font-semibold text-primary-600">
-                            {formatPrice(rec.price, 'INR')}
+                            {formatPrice(product.price, 'INR')}
                           </span>
-                          <button
-                            onClick={() => handleAddToCart(rec)}
-                            className="flex items-center gap-1 text-xs bg-primary-50 text-primary-700 px-2 py-1 rounded-lg hover:bg-primary-100 transition-colors"
-                          >
-                            <ShoppingCart className="h-3 w-3" />
-                            Add
-                          </button>
+                          {product.inStock ? (
+                            <button
+                              onClick={() => handleAddToCart(product)}
+                              className="flex items-center gap-1 text-xs bg-primary-50 text-primary-700 px-2 py-1 rounded-lg hover:bg-primary-100 transition-colors"
+                            >
+                              <ShoppingCart className="h-3 w-3" />
+                              Add
+                            </button>
+                          ) : (
+                            <span className="text-xs text-red-500">Out of Stock</span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -205,8 +232,8 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
 
         {isLoading && (
           <div className="flex gap-3">
-            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center flex-shrink-0">
-              <Sparkles className="h-4 w-4 text-white" />
+            <div className="h-8 w-8 flex items-center justify-center flex-shrink-0">
+              <Sparkles className="h-5 w-5 text-surface-400" />
             </div>
             <div className="bg-white border border-surface-200 rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm">
               <div className="flex items-center gap-2">
