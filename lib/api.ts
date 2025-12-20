@@ -18,6 +18,7 @@ import {
   ProductViewEvent,
   CartEvent,
   OrderEvent,
+  SuggestionsResponse,
 } from './types';
 import { generateSessionId } from './utils';
 
@@ -183,6 +184,18 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify(ids),
     });
+  }
+
+  // Suggestions API
+  async getSuggestions(limit: number = 12, userId?: string): Promise<SuggestionsResponse> {
+    const headers: Record<string, string> = {};
+    if (userId) {
+      headers['X-User-Id'] = userId;
+    }
+    return this.request<SuggestionsResponse>(
+      `/api/suggestions?limit=${limit}`,
+      { headers }
+    );
   }
 
   // Category APIs

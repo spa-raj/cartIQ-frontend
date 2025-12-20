@@ -7,20 +7,24 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { Product, Category } from '@/lib/types';
+import { Product, Category, SuggestionsResponse } from '@/lib/types';
 import { api } from '@/lib/api';
 import { calculateDiscount } from '@/lib/utils';
 import { useEvent } from '@/context/EventContext';
+import { useAuth } from '@/context/AuthContext';
 import { Skeleton } from '@/components/ui/Loading';
 
 export default function HomePage() {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [electronicsProducts, setElectronicsProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [suggestions, setSuggestions] = useState<SuggestionsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [currentBanner, setCurrentBanner] = useState(0);
   const { trackPageView } = useEvent();
+  const { user } = useAuth();
   const dealsScrollRef = useRef<HTMLDivElement>(null);
 
   const banners = [
@@ -96,6 +100,24 @@ export default function HomePage() {
     loadData();
   }, []);
 
+  // Fetch personalized suggestions (separate effect to handle user changes)
+  useEffect(() => {
+    const loadSuggestions = async () => {
+      try {
+        setSuggestionsLoading(true);
+        const suggestionsRes = await api.getSuggestions(12, user?.id);
+        setSuggestions(suggestionsRes);
+      } catch (error) {
+        console.error('Failed to load suggestions:', error);
+        setSuggestions(null);
+      } finally {
+        setSuggestionsLoading(false);
+      }
+    };
+
+    loadSuggestions();
+  }, [user?.id]);
+
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentBanner((prev) => (prev + 1) % banners.length);
@@ -161,6 +183,82 @@ export default function HomePage() {
                 }`}
               />
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Suggested for You Section */}
+      <section className="py-4 px-2 sm:px-4">
+        <div className="bg-white rounded-sm shadow-sm">
+          <div className="flex items-center justify-between p-4 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <h2 className="text-xl font-bold text-gray-900">
+                {suggestions?.personalized ? 'Suggested For You' : 'Trending Products'}
+              </h2>
+              {suggestions?.personalized && (
+                <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                  Personalized
+                </span>
+              )}
+            </div>
+            <Link
+              href="/products"
+              className="px-6 py-2 bg-[#2874f0] text-white text-sm font-medium rounded-sm hover:bg-[#1a5dc8] transition-colors"
+            >
+              VIEW ALL
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 p-4">
+            {suggestionsLoading ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="p-4">
+                  <Skeleton className="h-32 w-full mb-3" />
+                  <Skeleton className="h-4 w-3/4 mb-2" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+              ))
+            ) : !suggestions || suggestions.products.length === 0 ? (
+              <div className="col-span-full py-12 text-center text-gray-500">
+                <p>No suggestions available</p>
+                <Link href="/products" className="text-[#2874f0] hover:underline mt-2 inline-block">
+                  Browse all products
+                </Link>
+              </div>
+            ) : (
+              suggestions.products.slice(0, 12).map((product) => (
+                <Link
+                  key={product.id}
+                  href={`/products/${product.id}?source=recommendation`}
+                  className="p-4 hover:shadow-lg transition-shadow text-center group"
+                >
+                  <div className="h-32 flex items-center justify-center mb-3">
+                    {product.thumbnailUrl ? (
+                      <Image
+                        src={product.thumbnailUrl}
+                        alt={product.name}
+                        width={120}
+                        height={120}
+                        className="object-contain max-h-full group-hover:scale-105 transition-transform"
+                      />
+                    ) : (
+                      <div className="w-24 h-24 bg-gray-100 rounded flex items-center justify-center">
+                        <span className="text-gray-400 text-xs">No Image</span>
+                      </div>
+                    )}
+                  </div>
+                  <h3 className="text-sm text-gray-900 font-medium line-clamp-2 mb-1 group-hover:text-[#2874f0] transition-colors">
+                    {product.name}
+                  </h3>
+                  <p className="text-sm font-bold text-gray-900">
+                    ₹{formatPrice(product.price)}
+                  </p>
+                  {product.compareAtPrice && product.compareAtPrice > product.price && (
+                    <p className="text-xs text-green-600 font-medium">{calculateDiscount(product.compareAtPrice, product.price)}% off</p>
+                  )}
+                </Link>
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -370,58 +468,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* More Products - Only show if we have more than 4 products */}
-      {featuredProducts.length > 4 && (
-        <section className="py-4 px-2 sm:px-4">
-          <div className="bg-white rounded-sm shadow-sm">
-            <div className="flex items-center justify-between p-4 border-b border-gray-100">
-              <h2 className="text-xl font-bold text-gray-900">Suggested for You</h2>
-              <Link
-                href="/products"
-                className="px-6 py-2 bg-[#2874f0] text-white text-sm font-medium rounded-sm hover:bg-[#1a5dc8] transition-colors"
-              >
-                VIEW ALL
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 p-4">
-              {featuredProducts.slice(4, 10).map((product) => (
-                <Link
-                  key={product.id}
-                  href={`/products/${product.id}?source=home`}
-                  className="p-4 hover:shadow-lg transition-shadow text-center group"
-                >
-                  <div className="h-32 flex items-center justify-center mb-3">
-                    {product.thumbnailUrl ? (
-                      <Image
-                        src={product.thumbnailUrl}
-                        alt={product.name}
-                        width={120}
-                        height={120}
-                        className="object-contain max-h-full group-hover:scale-105 transition-transform"
-                      />
-                    ) : (
-                      <div className="w-24 h-24 bg-gray-100 rounded flex items-center justify-center">
-                        <span className="text-gray-400 text-xs">No Image</span>
-                      </div>
-                    )}
-                  </div>
-                  <h3 className="text-sm text-gray-900 font-medium line-clamp-2 mb-1 group-hover:text-[#2874f0] transition-colors">
-                    {product.name}
-                  </h3>
-                  <p className="text-sm font-bold text-gray-900">
-                    ₹{formatPrice(product.price)}
-                  </p>
-                  {product.compareAtPrice && product.compareAtPrice > product.price && (
-                    <p className="text-xs text-green-600 font-medium">{calculateDiscount(product.compareAtPrice, product.price)}% off</p>
-                  )}
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* AI Assistant Banner */}
       <section className="py-4 px-2 sm:px-4 mb-8">

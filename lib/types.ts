@@ -315,6 +315,15 @@ export interface UserProfileEvent {
   lastActive: string;
 }
 
+// Suggestions Types
+export interface SuggestionsResponse {
+  products: Product[];
+  totalCount: number;
+  personalized: boolean;
+  strategies: Record<string, string>;
+  userId: string | null;
+}
+
 // API Error
 export interface ApiError {
   error: string;
