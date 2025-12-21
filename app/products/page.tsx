@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, useState, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Product } from '@/lib/types';
 import { api } from '@/lib/api';
@@ -8,17 +8,27 @@ import { useEvent } from '@/context/EventContext';
 import ProductGrid from '@/components/products/ProductGrid';
 import ProductFilters from '@/components/products/ProductFilters';
 import Sidebar from '@/components/layout/Sidebar';
-import Button from '@/components/ui/Button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+
+const PAGE_SIZE = 15;
 
 function ProductsPageContent() {
   const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
   const { trackPageView } = useEvent();
+
+  // Pre-fetched next page data
+  const nextPageDataRef = useRef<Product[] | null>(null);
+  const isFetchingNextRef = useRef(false);
+
+  // Intersection Observer ref for infinite scroll
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const search = searchParams.get('search');
   const categoryId = searchParams.get('category');
@@ -28,57 +38,158 @@ function ProductsPageContent() {
   const sort = searchParams.get('sort') || 'createdAt,desc';
   const featured = searchParams.get('featured');
 
+  // Create a filter key to detect filter changes
+  const filterKey = `${search}-${categoryId}-${minPrice}-${maxPrice}-${brands}-${sort}-${featured}`;
+
   useEffect(() => {
     trackPageView('PRODUCTS', '/products');
   }, [trackPageView]);
 
+  // Fetch products for a specific page
+  const fetchProducts = useCallback(async (pageNum: number): Promise<{ content: Product[]; totalPages: number; totalElements: number }> => {
+    let response;
+
+    if (search) {
+      response = await api.searchProducts(search, pageNum, PAGE_SIZE, {
+        minPrice: minPrice ? parseFloat(minPrice) : undefined,
+        maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
+      });
+    } else if (categoryId) {
+      response = await api.getProductsByCategory(categoryId, pageNum, PAGE_SIZE);
+    } else if (minPrice || maxPrice) {
+      response = await api.getProductsByPriceRange(
+        minPrice ? parseFloat(minPrice) : undefined,
+        maxPrice ? parseFloat(maxPrice) : undefined,
+        pageNum,
+        PAGE_SIZE
+      );
+    } else if (featured === 'true') {
+      response = await api.getFeaturedProducts(PAGE_SIZE, pageNum);
+    } else {
+      response = await api.getProducts(pageNum, PAGE_SIZE, sort);
+    }
+
+    return {
+      content: response.content || [],
+      totalPages: response.totalPages || 0,
+      totalElements: response.totalElements || 0,
+    };
+  }, [search, categoryId, minPrice, maxPrice, sort, featured]);
+
+  // Pre-fetch next page in background
+  const prefetchNextPage = useCallback(async (currentPage: number, currentTotalPages: number) => {
+    if (currentPage >= currentTotalPages - 1 || isFetchingNextRef.current) return;
+
+    isFetchingNextRef.current = true;
+    try {
+      const nextData = await fetchProducts(currentPage + 1);
+      nextPageDataRef.current = nextData.content;
+    } catch (error) {
+      console.error('Failed to prefetch next page:', error);
+      nextPageDataRef.current = null;
+    } finally {
+      isFetchingNextRef.current = false;
+    }
+  }, [fetchProducts]);
+
+  // Load initial products when filters change
   useEffect(() => {
-    const loadProducts = async () => {
+    const loadInitialProducts = async () => {
       setIsLoading(true);
+      setProducts([]);
+      setPage(0);
+      nextPageDataRef.current = null;
+      isFetchingNextRef.current = false;
+
       try {
-        let response;
+        const data = await fetchProducts(0);
+        setProducts(data.content);
+        setTotalPages(data.totalPages);
+        setTotalElements(data.totalElements);
+        setHasMore(data.totalPages > 1);
 
-        if (search) {
-          // Search with optional price filters
-          response = await api.searchProducts(search, page, 20, {
-            minPrice: minPrice ? parseFloat(minPrice) : undefined,
-            maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
-          });
-        } else if (categoryId) {
-          response = await api.getProductsByCategory(categoryId, page, 20);
-        } else if (minPrice || maxPrice) {
-          response = await api.getProductsByPriceRange(
-            minPrice ? parseFloat(minPrice) : undefined,
-            maxPrice ? parseFloat(maxPrice) : undefined,
-            page,
-            20
-          );
-        } else if (featured === 'true') {
-          response = await api.getFeaturedProducts(20);
-        } else {
-          response = await api.getProducts(page, 20, sort);
+        // Pre-fetch next page
+        if (data.totalPages > 1) {
+          prefetchNextPage(0, data.totalPages);
         }
-
-        setProducts(response.content || []);
-        setTotalPages(response.totalPages || 0);
-        setTotalElements(response.totalElements || 0);
       } catch (error) {
         console.error('Failed to load products:', error);
         setProducts([]);
         setTotalPages(0);
         setTotalElements(0);
+        setHasMore(false);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadProducts();
-  }, [search, categoryId, minPrice, maxPrice, brands, sort, featured, page]);
+    loadInitialProducts();
+  }, [filterKey, fetchProducts, prefetchNextPage]);
+
+  // Load more products (for infinite scroll)
+  const loadMoreProducts = useCallback(async () => {
+    if (isLoadingMore || !hasMore || page >= totalPages - 1) return;
+
+    setIsLoadingMore(true);
+    const nextPage = page + 1;
+
+    try {
+      let newProducts: Product[];
+
+      // Use pre-fetched data if available
+      if (nextPageDataRef.current) {
+        newProducts = nextPageDataRef.current;
+        nextPageDataRef.current = null;
+      } else {
+        const data = await fetchProducts(nextPage);
+        newProducts = data.content;
+      }
+
+      setProducts(prev => [...prev, ...newProducts]);
+      setPage(nextPage);
+      setHasMore(nextPage < totalPages - 1);
+
+      // Pre-fetch the next page
+      prefetchNextPage(nextPage, totalPages);
+    } catch (error) {
+      console.error('Failed to load more products:', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [isLoadingMore, hasMore, page, totalPages, fetchProducts, prefetchNextPage]);
+
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoading && !isLoadingMore) {
+          loadMoreProducts();
+        }
+      },
+      { threshold: 0.1, rootMargin: '100px' }
+    );
+
+    const currentRef = loadMoreRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [hasMore, isLoading, isLoadingMore, loadMoreProducts]);
 
   const getPageTitle = () => {
     if (search) return `Search results for "${search}"`;
     if (featured === 'true') return 'Featured Products';
     return 'All Products';
+  };
+
+  const handleFilterChange = () => {
+    // Reset will happen automatically via filterKey change
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -87,7 +198,6 @@ function ProductsPageContent() {
         {/* Page Header */}
         <div className="mb-6">
           {search ? (
-            // Search results header
             <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3">
               <h1 className="text-2xl sm:text-3xl font-bold text-surface-900">
                 Search results for
@@ -99,7 +209,8 @@ function ProductsPageContent() {
           )}
           {!isLoading && totalElements !== undefined && (
             <p className="text-surface-500 mt-1 text-sm">
-              Showing <span className="font-medium text-surface-700">{(totalElements || 0).toLocaleString()}</span> {totalElements === 1 ? 'product' : 'products'}
+              Showing <span className="font-medium text-surface-700">{products.length.toLocaleString()}</span> of{' '}
+              <span className="font-medium text-surface-700">{(totalElements || 0).toLocaleString()}</span> {totalElements === 1 ? 'product' : 'products'}
             </p>
           )}
         </div>
@@ -111,7 +222,7 @@ function ProductsPageContent() {
           {/* Main Content */}
           <div className="flex-1">
             {/* Filters */}
-            <ProductFilters onFilterChange={() => setPage(0)} />
+            <ProductFilters onFilterChange={handleFilterChange} />
 
             {/* Products Grid */}
             <ProductGrid
@@ -126,59 +237,20 @@ function ProductsPageContent() {
               }
             />
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="mt-8 flex items-center justify-center gap-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.max(0, p - 1))}
-                  disabled={page === 0}
-                  leftIcon={<ChevronLeft className="h-4 w-4" />}
-                >
-                  Previous
-                </Button>
-
-                <div className="flex items-center gap-2">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i;
-                    } else if (page < 3) {
-                      pageNum = i;
-                    } else if (page > totalPages - 4) {
-                      pageNum = totalPages - 5 + i;
-                    } else {
-                      pageNum = page - 2 + i;
-                    }
-
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => setPage(pageNum)}
-                        className={`h-10 w-10 rounded-lg font-medium transition-colors ${
-                          page === pageNum
-                            ? 'bg-primary-600 text-white'
-                            : 'bg-white border border-surface-300 text-surface-700 hover:bg-surface-50'
-                        }`}
-                      >
-                        {pageNum + 1}
-                      </button>
-                    );
-                  })}
+            {/* Infinite Scroll Trigger & Loading Indicator */}
+            <div ref={loadMoreRef} className="mt-8 flex justify-center">
+              {isLoadingMore && (
+                <div className="flex items-center gap-2 text-surface-500 py-4">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span className="text-sm">Loading more products...</span>
                 </div>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                  disabled={page >= totalPages - 1}
-                  rightIcon={<ChevronRight className="h-4 w-4" />}
-                >
-                  Next
-                </Button>
-              </div>
-            )}
+              )}
+              {!hasMore && products.length > 0 && !isLoading && (
+                <p className="text-surface-400 text-sm py-4">
+                  You've reached the end of the list
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>
