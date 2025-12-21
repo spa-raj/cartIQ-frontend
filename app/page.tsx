@@ -16,17 +16,19 @@ import { Skeleton } from '@/components/ui/Loading';
 import RecommendationBadge from '@/components/products/RecommendationBadge';
 
 export default function HomePage() {
-  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [trendingProducts, setTrendingProducts] = useState<Product[]>([]);
   const [electronicsProducts, setElectronicsProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [suggestions, setSuggestions] = useState<SuggestionsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [trendingLoading, setTrendingLoading] = useState(true);
   const [suggestionsLoading, setSuggestionsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [currentBanner, setCurrentBanner] = useState(0);
   const { trackPageView } = useEvent();
   const { user } = useAuth();
   const dealsScrollRef = useRef<HTMLDivElement>(null);
+  const trendingScrollRef = useRef<HTMLDivElement>(null);
 
   const banners = [
     {
@@ -63,20 +65,11 @@ export default function HomePage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Fetch products, categories, and electronics in parallel
-        const [productsRes, categoriesRes, electronicsRes] = await Promise.allSettled([
-          api.getProducts(0, 12, 'createdAt,desc'),
+        // Fetch categories and electronics in parallel
+        const [categoriesRes, electronicsRes] = await Promise.allSettled([
           api.getCategories(),
           api.searchProducts('electronics', 0, 8),
         ]);
-
-        // Handle products result
-        if (productsRes.status === 'fulfilled' && productsRes.value?.content) {
-          setFeaturedProducts(productsRes.value.content);
-        } else {
-          console.error('Failed to load products:', productsRes.status === 'rejected' ? productsRes.reason : 'No content');
-          setHasError(true);
-        }
 
         // Handle categories result
         if (categoriesRes.status === 'fulfilled' && Array.isArray(categoriesRes.value)) {
@@ -99,6 +92,25 @@ export default function HomePage() {
     };
 
     loadData();
+  }, []);
+
+  // Fetch trending/featured products (always visible)
+  useEffect(() => {
+    const loadTrending = async () => {
+      try {
+        setTrendingLoading(true);
+        const trendingRes = await api.getFeaturedProducts(12);
+        if (trendingRes?.content) {
+          setTrendingProducts(trendingRes.content);
+        }
+      } catch (error) {
+        console.error('Failed to load trending products:', error);
+      } finally {
+        setTrendingLoading(false);
+      }
+    };
+
+    loadTrending();
   }, []);
 
   // Fetch personalized suggestions (separate effect to handle user changes)
@@ -135,6 +147,19 @@ export default function HomePage() {
       });
     }
   };
+
+  const scrollTrending = (direction: 'left' | 'right') => {
+    if (trendingScrollRef.current) {
+      const scrollAmount = 300;
+      trendingScrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth',
+      });
+    }
+  };
+
+  // Determine if we should show personalized suggestions section
+  const showSuggestedForYou = suggestions?.personalized === true && suggestions?.products?.length > 0;
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-IN').format(price);
@@ -188,93 +213,90 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Suggested for You Section */}
-      <section className="py-4 px-2 sm:px-4">
-        <div className="bg-white rounded-sm shadow-sm">
-          <div className="flex items-center justify-between p-4 border-b border-gray-100">
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-bold text-gray-900">
-                {suggestions?.personalized ? 'Suggested For You' : 'Trending Products'}
-              </h2>
-              {suggestions?.personalized && (
-                <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+      {/* Suggested For You Section - Only shown when personalized */}
+      {showSuggestedForYou && (
+        <section className="py-4 px-2 sm:px-4">
+          <div className="bg-white rounded-sm shadow-sm">
+            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <span className="text-lg">✨</span>
+                  Suggested For You
+                </h2>
+                <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
                   Personalized
                 </span>
-              )}
-            </div>
-            <Link
-              href="/products"
-              className="px-6 py-2 bg-[#2874f0] text-white text-sm font-medium rounded-sm hover:bg-[#1a5dc8] transition-colors"
-            >
-              VIEW ALL
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 p-4">
-            {suggestionsLoading ? (
-              Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="p-4">
-                  <Skeleton className="h-32 w-full mb-3" />
-                  <Skeleton className="h-4 w-3/4 mb-2" />
-                  <Skeleton className="h-4 w-1/2" />
-                </div>
-              ))
-            ) : !suggestions || suggestions.products.length === 0 ? (
-              <div className="col-span-full py-12 text-center text-gray-500">
-                <p>No suggestions available</p>
-                <Link href="/products" className="text-[#2874f0] hover:underline mt-2 inline-block">
-                  Browse all products
-                </Link>
               </div>
-            ) : (
-              suggestions.products.slice(0, 12).map((suggestion) => (
-                <Link
-                  key={suggestion.product.id}
-                  href={`/products/${suggestion.product.id}?source=recommendation`}
-                  className="p-4 hover:shadow-lg transition-shadow text-center group relative"
-                >
-                  {/* Recommendation Badge */}
-                  {suggestion.reason && (
-                    <div className="mb-2">
-                      <RecommendationBadge reason={suggestion.reason} strategy={suggestion.strategy} />
-                    </div>
-                  )}
-                  <div className="h-32 flex items-center justify-center mb-3">
-                    {suggestion.product.thumbnailUrl ? (
-                      <Image
-                        src={suggestion.product.thumbnailUrl}
-                        alt={suggestion.product.name}
-                        width={120}
-                        height={120}
-                        className="object-contain max-h-full group-hover:scale-105 transition-transform"
-                      />
-                    ) : (
-                      <div className="w-24 h-24 bg-gray-100 rounded flex items-center justify-center">
-                        <span className="text-gray-400 text-xs">No Image</span>
+              <Link
+                href="/products"
+                className="px-6 py-2 bg-[#2874f0] text-white text-sm font-medium rounded-sm hover:bg-[#1a5dc8] transition-colors"
+              >
+                VIEW ALL
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 p-4">
+              {suggestionsLoading ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="p-4">
+                    <Skeleton className="h-32 w-full mb-3" />
+                    <Skeleton className="h-4 w-3/4 mb-2" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                ))
+              ) : (
+                suggestions!.products.slice(0, 12).map((suggestion) => (
+                  <Link
+                    key={suggestion.product.id}
+                    href={`/products/${suggestion.product.id}?source=recommendation`}
+                    className="p-4 hover:shadow-lg transition-shadow text-center group relative"
+                  >
+                    {/* Recommendation Badge */}
+                    {suggestion.reason && (
+                      <div className="mb-2">
+                        <RecommendationBadge reason={suggestion.reason} strategy={suggestion.strategy} />
                       </div>
                     )}
-                  </div>
-                  <h3 className="text-sm text-gray-900 font-medium line-clamp-2 mb-1 group-hover:text-[#2874f0] transition-colors">
-                    {suggestion.product.name}
-                  </h3>
-                  <p className="text-sm font-bold text-gray-900">
-                    ₹{formatPrice(suggestion.product.price)}
-                  </p>
-                  {suggestion.product.compareAtPrice && suggestion.product.compareAtPrice > suggestion.product.price && (
-                    <p className="text-xs text-green-600 font-medium">{calculateDiscount(suggestion.product.compareAtPrice, suggestion.product.price)}% off</p>
-                  )}
-                </Link>
-              ))
-            )}
+                    <div className="h-32 flex items-center justify-center mb-3">
+                      {suggestion.product.thumbnailUrl ? (
+                        <Image
+                          src={suggestion.product.thumbnailUrl}
+                          alt={suggestion.product.name}
+                          width={120}
+                          height={120}
+                          className="object-contain max-h-full group-hover:scale-105 transition-transform"
+                        />
+                      ) : (
+                        <div className="w-24 h-24 bg-gray-100 rounded flex items-center justify-center">
+                          <span className="text-gray-400 text-xs">No Image</span>
+                        </div>
+                      )}
+                    </div>
+                    <h3 className="text-sm text-gray-900 font-medium line-clamp-2 mb-1 group-hover:text-[#2874f0] transition-colors">
+                      {suggestion.product.name}
+                    </h3>
+                    <p className="text-sm font-bold text-gray-900">
+                      ₹{formatPrice(suggestion.product.price)}
+                    </p>
+                    {suggestion.product.compareAtPrice && suggestion.product.compareAtPrice > suggestion.product.price && (
+                      <p className="text-xs text-green-600 font-medium">{calculateDiscount(suggestion.product.compareAtPrice, suggestion.product.price)}% off</p>
+                    )}
+                  </Link>
+                ))
+              )}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* Top Deals Section */}
+      {/* Trending Now Section - Always visible */}
       <section className="py-4 px-2 sm:px-4">
         <div className="bg-white rounded-sm shadow-sm">
           <div className="flex items-center justify-between p-4 border-b border-gray-100">
-            <h2 className="text-xl font-bold text-gray-900">Top Deals</h2>
+            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <span className="text-lg">🔥</span>
+              Trending Now
+            </h2>
             <Link
               href="/products?featured=true"
               className="px-6 py-2 bg-[#2874f0] text-white text-sm font-medium rounded-sm hover:bg-[#1a5dc8] transition-colors"
@@ -286,13 +308,13 @@ export default function HomePage() {
           <div className="relative">
             {/* Scroll Buttons */}
             <button
-              onClick={() => scrollDeals('left')}
+              onClick={() => scrollTrending('left')}
               className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg p-3 rounded-r-sm hover:bg-gray-50 transition-colors"
             >
               <ChevronLeft className="h-6 w-6 text-gray-700" />
             </button>
             <button
-              onClick={() => scrollDeals('right')}
+              onClick={() => scrollTrending('right')}
               className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg p-3 rounded-l-sm hover:bg-gray-50 transition-colors"
             >
               <ChevronRight className="h-6 w-6 text-gray-700" />
@@ -300,11 +322,11 @@ export default function HomePage() {
 
             {/* Products Scroll */}
             <div
-              ref={dealsScrollRef}
+              ref={trendingScrollRef}
               className="flex overflow-x-auto scrollbar-hide gap-0 px-10"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
-              {isLoading ? (
+              {trendingLoading ? (
                 Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className="flex-shrink-0 w-[180px] p-4 border-r border-gray-100">
                     <Skeleton className="h-32 w-full mb-3" />
@@ -312,18 +334,18 @@ export default function HomePage() {
                     <Skeleton className="h-4 w-1/2" />
                   </div>
                 ))
-              ) : featuredProducts.length === 0 ? (
-                <div className="flex-1 py-12 text-center text-gray-500">
-                  <p>No products available at the moment.</p>
+              ) : trendingProducts.length === 0 ? (
+                <div className="flex-1 py-12 text-center text-gray-500 w-full">
+                  <p>No trending products available.</p>
                   <Link href="/products" className="text-[#2874f0] hover:underline mt-2 inline-block">
                     Browse all products
                   </Link>
                 </div>
               ) : (
-                featuredProducts.slice(0, 8).map((product) => (
+                trendingProducts.slice(0, 12).map((product) => (
                   <Link
                     key={product.id}
-                    href={`/products/${product.id}?source=home`}
+                    href={`/products/${product.id}?source=trending`}
                     className="flex-shrink-0 w-[180px] p-4 border-r border-gray-100 hover:shadow-lg transition-shadow text-center group"
                   >
                     <div className="h-32 flex items-center justify-center mb-3">
@@ -345,8 +367,11 @@ export default function HomePage() {
                       {product.name}
                     </h3>
                     <p className="text-sm font-bold text-gray-900">
-                      From ₹{formatPrice(product.price)}
+                      ₹{formatPrice(product.price)}
                     </p>
+                    {product.compareAtPrice && product.compareAtPrice > product.price && (
+                      <p className="text-xs text-green-600 font-medium">{calculateDiscount(product.compareAtPrice, product.price)}% off</p>
+                    )}
                   </Link>
                 ))
               )}
