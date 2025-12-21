@@ -10,6 +10,7 @@ import { useCart } from '@/context/CartContext';
 import { formatPrice, getPlaceholderImage } from '@/lib/utils';
 import Image from 'next/image';
 import Link from 'next/link';
+import ChatMarkdown from './ChatMarkdown';
 
 interface ChatWindowProps {
   onClose: () => void;
@@ -163,9 +164,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
                     : 'bg-white border border-surface-200 text-surface-800 rounded-bl-sm shadow-sm'
                 }`}
               >
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                  {message.content}
-                </p>
+                <ChatMarkdown content={message.content} className="text-sm leading-relaxed" />
               </div>
             </div>
 

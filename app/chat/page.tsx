@@ -19,6 +19,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { formatPrice, getPlaceholderImage } from '@/lib/utils';
 import Button from '@/components/ui/Button';
+import ChatMarkdown from '@/components/chat/ChatMarkdown';
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -175,7 +176,7 @@ export default function ChatPage() {
                       : 'bg-white border border-surface-200 text-surface-800 rounded-bl-sm shadow-sm'
                   }`}
                 >
-                  <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                  <ChatMarkdown content={message.content} className="leading-relaxed" />
                 </div>
               </div>
 
