@@ -21,7 +21,6 @@ import { Order } from '@/lib/types';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { useEvent } from '@/context/EventContext';
-import { useCart } from '@/context/CartContext';
 import {
   formatPrice,
   formatDate,
@@ -43,7 +42,6 @@ function OrderDetailContent() {
 
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { trackPageView, trackOrderEvent } = useEvent();
-  const { productCategoryMap } = useCart();
 
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -83,6 +81,7 @@ function OrderDetailContent() {
       const updatedOrder = await api.cancelOrder(order.id);
       setOrder(updatedOrder);
 
+      // Track order cancellation - use categoryName from order items
       trackOrderEvent({
         action: 'CANCELLED',
         orderId: order.id,
@@ -90,7 +89,7 @@ function OrderDetailContent() {
         items: order.items?.map(item => ({
           productId: item.productId,
           productName: item.productName,
-          category: productCategoryMap[item.productId],
+          category: item.categoryName,
           quantity: item.quantity,
           price: item.unitPrice,
         })) || [],

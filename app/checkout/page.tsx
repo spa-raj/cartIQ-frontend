@@ -16,7 +16,7 @@ import { PageLoader } from '@/components/ui/Loading';
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { cart, refreshCart, productCategoryMap } = useCart();
+  const { cart, refreshCart } = useCart();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { trackPageView, trackOrderEvent } = useEvent();
 
@@ -67,7 +67,7 @@ export default function CheckoutPage() {
         notes: formData.notes || undefined,
       });
 
-      // Track order event
+      // Track order event - use categoryName from order items
       trackOrderEvent({
         action: 'PLACED',
         orderId: order.id,
@@ -75,7 +75,7 @@ export default function CheckoutPage() {
         items: order.items?.map(item => ({
           productId: item.productId,
           productName: item.productName,
-          category: productCategoryMap[item.productId],
+          category: item.categoryName,
           quantity: item.quantity,
           price: item.unitPrice,
         })) || [],

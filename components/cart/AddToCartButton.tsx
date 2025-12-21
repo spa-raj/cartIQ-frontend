@@ -12,7 +12,7 @@ interface AddToCartButtonProps {
   productName: string;
   price: number;
   inStock: boolean;
-  category?: string;
+  category: string;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
   showQuantity?: boolean;

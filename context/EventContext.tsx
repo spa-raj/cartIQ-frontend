@@ -25,12 +25,12 @@ interface EventContextType {
   recentlyViewedProductIds: string[];
   recentCategories: string[];
   trackPageView: (pageType: string, pagePath?: string) => void;
-  trackProductView: (productId: string, productName: string, category?: string, price?: number, source?: 'search' | 'category' | 'home' | 'recommendation' | 'direct' | 'cart', searchQuery?: string, viewDurationMs?: number) => void;
+  trackProductView: (productId: string, productName: string, category: string, price: number, source?: 'search' | 'category' | 'home' | 'recommendation' | 'direct' | 'cart', searchQuery?: string, viewDurationMs?: number) => void;
   trackCartEvent: (data: {
     action: 'add' | 'remove' | 'update_quantity' | 'clear';
     productId?: string;
     productName?: string;
-    category?: string;
+    category: string;
     quantity?: number;
     price?: number;
     cartTotal?: number;
@@ -40,7 +40,7 @@ interface EventContextType {
     action: 'PLACED' | 'CANCELLED' | 'COMPLETED';
     orderId: string;
     orderNumber: string;
-    items: { productId: string; productName: string; category?: string; quantity: number; price: number }[];
+    items: { productId: string; productName: string; category: string; quantity: number; price: number }[];
     subtotal: number;
     discount: number;
     total: number;
@@ -151,7 +151,7 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
   );
 
   const trackProductView = useCallback(
-    (productId: string, productName: string, category?: string, price?: number, source?: 'search' | 'category' | 'home' | 'recommendation' | 'direct' | 'cart', searchQuery?: string, viewDurationMs?: number) => {
+    (productId: string, productName: string, category: string, price: number, source?: 'search' | 'category' | 'home' | 'recommendation' | 'direct' | 'cart', searchQuery?: string, viewDurationMs?: number) => {
       if (!sessionId) return;
 
       // Track recently viewed products for chat personalization
@@ -163,14 +163,12 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
       });
 
       // Track recent categories for chat personalization
-      if (category) {
-        setRecentCategories(prev => {
-          const filtered = prev.filter(cat => cat !== category);
-          const updated = [category, ...filtered].slice(0, MAX_RECENT_ITEMS);
-          setToStorage(STORAGE_KEY_CATEGORIES, updated);
-          return updated;
-        });
-      }
+      setRecentCategories(prev => {
+        const filtered = prev.filter(cat => cat !== category);
+        const updated = [category, ...filtered].slice(0, MAX_RECENT_ITEMS);
+        setToStorage(STORAGE_KEY_CATEGORIES, updated);
+        return updated;
+      });
 
       api
         .trackProductView({
@@ -179,7 +177,7 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
           productId,
           productName,
           category,
-          price: price || 0,
+          price,
           source,
           searchQuery,
           viewDurationMs,
@@ -196,7 +194,7 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
       action: 'add' | 'remove' | 'update_quantity' | 'clear';
       productId?: string;
       productName?: string;
-      category?: string;
+      category: string;
       quantity?: number;
       price?: number;
       cartTotal?: number;
@@ -222,7 +220,7 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
       action: 'PLACED' | 'CANCELLED' | 'COMPLETED';
       orderId: string;
       orderNumber: string;
-      items: { productId: string; productName: string; category?: string; quantity: number; price: number }[];
+      items: { productId: string; productName: string; category: string; quantity: number; price: number }[];
       subtotal: number;
       discount: number;
       total: number;

@@ -55,8 +55,8 @@ export interface Product {
   currency: string;
   stockQuantity: number;
   brand?: string;
-  categoryId?: string;
-  categoryName?: string;
+  categoryId: string;
+  categoryName: string;
   imageUrls: string[];
   thumbnailUrl?: string;
   rating: number;
@@ -103,6 +103,7 @@ export interface CartItem {
   id: string;
   productId: string;
   productName: string;
+  categoryName: string;
   unitPrice: number;
   quantity: number;
   subtotal: number;
@@ -136,6 +137,7 @@ export interface OrderItem {
   productId: string;
   productSku: string;
   productName: string;
+  categoryName: string;
   unitPrice: number;
   quantity: number;
   subtotal: number;
@@ -255,7 +257,7 @@ export type ProductViewSource = 'search' | 'category' | 'home' | 'recommendation
 export interface ProductViewEvent extends BaseEvent {
   productId: string;
   productName: string;
-  category?: string;
+  category: string;
   price: number;
   source?: ProductViewSource;
   searchQuery?: string;
@@ -269,7 +271,7 @@ export interface CartEvent extends BaseEvent {
   action: CartEventAction;
   productId?: string;
   productName?: string;
-  category?: string;
+  category: string;
   quantity?: number;
   price?: number;
   cartTotal?: number;
@@ -279,7 +281,7 @@ export interface CartEvent extends BaseEvent {
 export interface OrderEventItem {
   productId: string;
   productName: string;
-  category?: string;
+  category: string;
   quantity: number;
   price: number;
 }

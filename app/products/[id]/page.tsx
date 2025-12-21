@@ -157,17 +157,13 @@ function ProductDetailContent() {
           <Link href="/products" className="hover:text-primary-600">
             Products
           </Link>
-          {product.categoryName && (
-            <>
-              <ChevronRight className="h-4 w-4" />
-              <Link
-                href={`/categories/${product.categoryId}`}
-                className="hover:text-primary-600"
-              >
-                {product.categoryName}
-              </Link>
-            </>
-          )}
+          <ChevronRight className="h-4 w-4" />
+          <Link
+            href={`/categories/${product.categoryId}`}
+            className="hover:text-primary-600"
+          >
+            {product.categoryName}
+          </Link>
           <ChevronRight className="h-4 w-4" />
           <span className="text-surface-900 font-medium truncate max-w-[200px]">
             {product.name}
@@ -255,14 +251,12 @@ function ProductDetailContent() {
           <div className="space-y-6">
             {/* Category & Brand */}
             <div className="flex items-center gap-2 text-sm">
-              {product.categoryName && (
-                <Link
-                  href={`/categories/${product.categoryId}`}
-                  className="text-primary-600 hover:underline"
-                >
-                  {product.categoryName}
-                </Link>
-              )}
+              <Link
+                href={`/categories/${product.categoryId}`}
+                className="text-primary-600 hover:underline"
+              >
+                {product.categoryName}
+              </Link>
               {product.brand && (
                 <>
                   <span className="text-surface-300">•</span>

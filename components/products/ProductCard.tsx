@@ -88,9 +88,7 @@ export default function ProductCard({ product, source = 'direct', searchQuery, o
         {/* Content */}
         <div className="p-4 flex flex-col flex-1">
           {/* Category */}
-          {product.categoryName && (
-            <p className="text-xs text-accent-500 font-medium mb-1">{product.categoryName}</p>
-          )}
+          <p className="text-xs text-accent-500 font-medium mb-1">{product.categoryName}</p>
 
           {/* Title */}
           <h3 className="text-sm text-surface-800 mb-2 line-clamp-2 min-h-[2.5rem] group-hover:text-accent-500 transition-colors">
