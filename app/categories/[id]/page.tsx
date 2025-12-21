@@ -46,8 +46,8 @@ export default function CategoryPage() {
     const response = await api.getProductsByCategory(categoryId, pageNum, PAGE_SIZE);
     return {
       content: response.content || [],
-      totalElements: response.totalElements || 0,
-      totalPages: response.totalPages || 0,
+      totalElements: response.page?.totalElements ?? 0,
+      totalPages: response.page?.totalPages ?? 0,
     };
   }, [categoryId]);
 
@@ -86,11 +86,11 @@ export default function CategoryPage() {
 
         setCategory(categoryData);
         setProducts(productsData.content || []);
-        setTotalElements(productsData.totalElements || 0);
+        setTotalElements(productsData.page?.totalElements ?? 0);
         setSubcategories(subcategoriesData);
 
         // Pre-fetch next page if there are more
-        const totalPages = productsData.totalPages || 0;
+        const totalPages = productsData.page?.totalPages ?? 0;
         if (totalPages > 1) {
           prefetchNextPage(0, totalPages);
         }

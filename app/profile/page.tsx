@@ -63,7 +63,7 @@ export default function ProfilePage() {
         setPreferences(prefsData);
 
         // Calculate order statistics
-        const totalOrders = ordersData?.totalElements || 0;
+        const totalOrders = ordersData?.page?.totalElements ?? 0;
         const totalSpent = ordersData?.content?.reduce((sum, order) => sum + order.totalAmount, 0) || 0;
 
         // Calculate top categories from order history

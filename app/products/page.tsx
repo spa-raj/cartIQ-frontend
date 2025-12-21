@@ -72,8 +72,8 @@ function ProductsPageContent() {
 
     return {
       content: response.content || [],
-      totalPages: response.totalPages || 0,
-      totalElements: response.totalElements || 0,
+      totalPages: response.page?.totalPages ?? 0,
+      totalElements: response.page?.totalElements ?? 0,
     };
   }, [search, categoryId, minPrice, maxPrice, sort, featured]);
 

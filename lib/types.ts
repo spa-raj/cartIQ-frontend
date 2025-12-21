@@ -81,21 +81,15 @@ export interface Category {
   updatedAt: string;
 }
 
+// Spring Boot 3.x pagination format
 export interface PaginatedResponse<T> {
   content: T[];
-  pageable: {
-    pageNumber: number;
-    pageSize: number;
-    sort: {
-      sorted: boolean;
-      unsorted: boolean;
-    };
+  page: {
+    size: number;
+    number: number;
+    totalElements: number;
+    totalPages: number;
   };
-  totalElements: number;
-  totalPages: number;
-  last: boolean;
-  first: boolean;
-  numberOfElements: number;
 }
 
 // Cart Types
