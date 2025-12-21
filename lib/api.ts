@@ -147,17 +147,18 @@ class ApiClient {
     return this.request<PaginatedResponse<Product>>(`/api/products/search?${params}`);
   }
 
-  async getFeaturedProducts(size: number = 10): Promise<PaginatedResponse<Product>> {
-    return this.request<PaginatedResponse<Product>>(`/api/products/featured?size=${size}`);
+  async getFeaturedProducts(size: number = 10, page: number = 0): Promise<PaginatedResponse<Product>> {
+    return this.request<PaginatedResponse<Product>>(`/api/products/featured?page=${page}&size=${size}`);
   }
 
   async getProductsByCategory(
     categoryId: string,
     page: number = 0,
-    size: number = 20
+    size: number = 20,
+    sort: string = 'rating,desc'
   ): Promise<PaginatedResponse<Product>> {
     return this.request<PaginatedResponse<Product>>(
-      `/api/products/category/${categoryId}?page=${page}&size=${size}`
+      `/api/products/category/${categoryId}?page=${page}&size=${size}&sort=${sort}`
     );
   }
 

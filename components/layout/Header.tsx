@@ -12,7 +12,6 @@ import {
   Package,
   ChevronDown,
   User,
-  Store,
   MoreVertical,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -168,15 +167,6 @@ export default function Header() {
                 <span className="hidden lg:inline">Cart</span>
               </Link>
 
-              {/* Become a Seller */}
-              <Link
-                href="/seller"
-                className="hidden lg:flex items-center gap-2 text-gray-900 hover:text-[#2874f0] font-medium text-sm transition-colors"
-              >
-                <Store className="h-5 w-5" />
-                <span>Become a Seller</span>
-              </Link>
-
               {/* More Options */}
               <button className="hidden lg:flex items-center text-gray-700 hover:text-[#2874f0]">
                 <MoreVertical className="h-5 w-5" />
@@ -210,13 +200,6 @@ export default function Header() {
               All Products
             </Link>
             <Link
-              href="/categories"
-              onClick={() => setIsMenuOpen(false)}
-              className="block px-4 py-3 rounded-sm hover:bg-[#f0f5ff] text-gray-700 font-medium transition-colors"
-            >
-              Categories
-            </Link>
-            <Link
               href="/products?featured=true"
               onClick={() => setIsMenuOpen(false)}
               className="block px-4 py-3 rounded-sm hover:bg-[#f0f5ff] text-gray-700 font-medium transition-colors"
@@ -229,13 +212,6 @@ export default function Header() {
               className="block px-4 py-3 rounded-sm bg-[#f0f5ff] text-[#2874f0] font-medium transition-colors"
             >
               AI Assistant
-            </Link>
-            <Link
-              href="/seller"
-              onClick={() => setIsMenuOpen(false)}
-              className="block px-4 py-3 rounded-sm hover:bg-[#f0f5ff] text-gray-700 font-medium transition-colors"
-            >
-              Become a Seller
             </Link>
             {!isAuthenticated && (
               <div className="pt-4 border-t border-gray-100 mt-4 space-y-2">

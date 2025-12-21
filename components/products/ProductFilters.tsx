@@ -206,8 +206,9 @@ export default function ProductFilters({ onFilterChange }: ProductFiltersProps) 
           {/* Apply Button */}
           <button
             onClick={applyFilters}
-            className="px-4 py-1.5 text-xs font-medium bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
+            className="px-5 py-2 text-sm font-semibold bg-[#2874f0] text-white rounded-lg hover:bg-[#1a5dc8] transition-colors shadow-sm flex items-center gap-1.5"
           >
+            <SlidersHorizontal className="h-4 w-4" />
             Apply Filters
           </button>
         </div>
