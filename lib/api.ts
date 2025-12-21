@@ -130,11 +130,21 @@ class ApiClient {
   async searchProducts(
     query: string,
     page: number = 0,
-    size: number = 20
+    size: number = 20,
+    filters?: {
+      minPrice?: number;
+      maxPrice?: number;
+      minRating?: number;
+    }
   ): Promise<PaginatedResponse<Product>> {
-    return this.request<PaginatedResponse<Product>>(
-      `/api/products/search?q=${encodeURIComponent(query)}&page=${page}&size=${size}`
-    );
+    const params = new URLSearchParams();
+    params.append('q', query);
+    params.append('page', page.toString());
+    params.append('size', size.toString());
+    if (filters?.minPrice !== undefined) params.append('minPrice', filters.minPrice.toString());
+    if (filters?.maxPrice !== undefined) params.append('maxPrice', filters.maxPrice.toString());
+    if (filters?.minRating !== undefined) params.append('minRating', filters.minRating.toString());
+    return this.request<PaginatedResponse<Product>>(`/api/products/search?${params}`);
   }
 
   async getFeaturedProducts(size: number = 10): Promise<PaginatedResponse<Product>> {

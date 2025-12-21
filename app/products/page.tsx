@@ -39,7 +39,11 @@ function ProductsPageContent() {
         let response;
 
         if (search) {
-          response = await api.searchProducts(search, page, 20);
+          // Search with optional price filters
+          response = await api.searchProducts(search, page, 20, {
+            minPrice: minPrice ? parseFloat(minPrice) : undefined,
+            maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
+          });
         } else if (categoryId) {
           response = await api.getProductsByCategory(categoryId, page, 20);
         } else if (minPrice || maxPrice) {
