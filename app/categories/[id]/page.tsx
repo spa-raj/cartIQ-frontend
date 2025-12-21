@@ -24,8 +24,7 @@ export default function CategoryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [page, setPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
+  const [totalElements, setTotalElements] = useState(0);
   const { trackPageView } = useEvent();
 
   // Pre-fetched next page data
@@ -34,6 +33,9 @@ export default function CategoryPage() {
 
   // Intersection Observer ref for infinite scroll
   const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  // Calculate hasMore based on products loaded vs total
+  const hasMore = products.length < totalElements;
 
   useEffect(() => {
     trackPageView('CATEGORY', `/categories/${categoryId}`);
@@ -44,6 +46,7 @@ export default function CategoryPage() {
     const response = await api.getProductsByCategory(categoryId, pageNum, PAGE_SIZE);
     return {
       content: response.content || [],
+      totalElements: response.totalElements || 0,
       totalPages: response.totalPages || 0,
     };
   }, [categoryId]);
@@ -70,6 +73,7 @@ export default function CategoryPage() {
       setIsLoading(true);
       setProducts([]);
       setPage(0);
+      setTotalElements(0);
       nextPageDataRef.current = null;
       isFetchingNextRef.current = false;
 
@@ -82,17 +86,16 @@ export default function CategoryPage() {
 
         setCategory(categoryData);
         setProducts(productsData.content || []);
-        setTotalPages(productsData.totalPages || 0);
+        setTotalElements(productsData.totalElements || 0);
         setSubcategories(subcategoriesData);
-        setHasMore((productsData.totalPages || 0) > 1);
 
-        // Pre-fetch next page
-        if ((productsData.totalPages || 0) > 1) {
-          prefetchNextPage(0, productsData.totalPages || 0);
+        // Pre-fetch next page if there are more
+        const totalPages = productsData.totalPages || 0;
+        if (totalPages > 1) {
+          prefetchNextPage(0, totalPages);
         }
       } catch (error) {
         console.error('Failed to load category:', error);
-        setHasMore(false);
       } finally {
         setIsLoading(false);
       }
@@ -103,26 +106,28 @@ export default function CategoryPage() {
 
   // Load more products (for infinite scroll)
   const loadMoreProducts = useCallback(async () => {
-    if (isLoadingMore || !hasMore || page >= totalPages - 1) return;
+    if (isLoadingMore || !hasMore) return;
 
     setIsLoadingMore(true);
     const nextPage = page + 1;
 
     try {
       let newProducts: Product[];
+      let totalPages: number;
 
       // Use pre-fetched data if available
       if (nextPageDataRef.current) {
         newProducts = nextPageDataRef.current;
         nextPageDataRef.current = null;
+        totalPages = Math.ceil(totalElements / PAGE_SIZE);
       } else {
         const data = await fetchProducts(nextPage);
         newProducts = data.content;
+        totalPages = data.totalPages;
       }
 
       setProducts(prev => [...prev, ...newProducts]);
       setPage(nextPage);
-      setHasMore(nextPage < totalPages - 1);
 
       // Pre-fetch the next page
       prefetchNextPage(nextPage, totalPages);
@@ -131,7 +136,7 @@ export default function CategoryPage() {
     } finally {
       setIsLoadingMore(false);
     }
-  }, [isLoadingMore, hasMore, page, totalPages, fetchProducts, prefetchNextPage]);
+  }, [isLoadingMore, hasMore, page, totalElements, fetchProducts, prefetchNextPage]);
 
   // Intersection Observer for infinite scroll
   useEffect(() => {
@@ -198,8 +203,8 @@ export default function CategoryPage() {
           )}
           <p className="text-surface-500 mt-2">
             Showing <span className="font-medium text-surface-700">{products.length.toLocaleString()}</span> of{' '}
-            <span className="font-medium text-surface-700">{(category.productCount || 0).toLocaleString()}</span>{' '}
-            {category.productCount === 1 ? 'product' : 'products'}
+            <span className="font-medium text-surface-700">{totalElements.toLocaleString()}</span>{' '}
+            {totalElements === 1 ? 'product' : 'products'}
           </p>
         </div>
 

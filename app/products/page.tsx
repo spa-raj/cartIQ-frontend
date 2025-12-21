@@ -18,10 +18,11 @@ function ProductsPageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [page, setPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
   const { trackPageView } = useEvent();
+
+  // Calculate hasMore based on products loaded vs total
+  const hasMore = products.length < totalElements;
 
   // Pre-fetched next page data
   const nextPageDataRef = useRef<Product[] | null>(null);
@@ -98,26 +99,23 @@ function ProductsPageContent() {
       setIsLoading(true);
       setProducts([]);
       setPage(0);
+      setTotalElements(0);
       nextPageDataRef.current = null;
       isFetchingNextRef.current = false;
 
       try {
         const data = await fetchProducts(0);
         setProducts(data.content);
-        setTotalPages(data.totalPages);
         setTotalElements(data.totalElements);
-        setHasMore(data.totalPages > 1);
 
-        // Pre-fetch next page
+        // Pre-fetch next page if there are more
         if (data.totalPages > 1) {
           prefetchNextPage(0, data.totalPages);
         }
       } catch (error) {
         console.error('Failed to load products:', error);
         setProducts([]);
-        setTotalPages(0);
         setTotalElements(0);
-        setHasMore(false);
       } finally {
         setIsLoading(false);
       }
@@ -128,26 +126,28 @@ function ProductsPageContent() {
 
   // Load more products (for infinite scroll)
   const loadMoreProducts = useCallback(async () => {
-    if (isLoadingMore || !hasMore || page >= totalPages - 1) return;
+    if (isLoadingMore || !hasMore) return;
 
     setIsLoadingMore(true);
     const nextPage = page + 1;
 
     try {
       let newProducts: Product[];
+      let totalPages: number;
 
       // Use pre-fetched data if available
       if (nextPageDataRef.current) {
         newProducts = nextPageDataRef.current;
         nextPageDataRef.current = null;
+        totalPages = Math.ceil(totalElements / PAGE_SIZE);
       } else {
         const data = await fetchProducts(nextPage);
         newProducts = data.content;
+        totalPages = data.totalPages;
       }
 
       setProducts(prev => [...prev, ...newProducts]);
       setPage(nextPage);
-      setHasMore(nextPage < totalPages - 1);
 
       // Pre-fetch the next page
       prefetchNextPage(nextPage, totalPages);
@@ -156,7 +156,7 @@ function ProductsPageContent() {
     } finally {
       setIsLoadingMore(false);
     }
-  }, [isLoadingMore, hasMore, page, totalPages, fetchProducts, prefetchNextPage]);
+  }, [isLoadingMore, hasMore, page, totalElements, fetchProducts, prefetchNextPage]);
 
   // Intersection Observer for infinite scroll
   useEffect(() => {
