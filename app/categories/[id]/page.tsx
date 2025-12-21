@@ -1,16 +1,18 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronRight, Folder } from 'lucide-react';
+import { ChevronRight, Folder, Loader2 } from 'lucide-react';
 import { Category, Product } from '@/lib/types';
 import { api } from '@/lib/api';
 import { useEvent } from '@/context/EventContext';
 import ProductGrid from '@/components/products/ProductGrid';
 import Sidebar from '@/components/layout/Sidebar';
 import Button from '@/components/ui/Button';
-import { PageLoader, Skeleton } from '@/components/ui/Loading';
+import { PageLoader } from '@/components/ui/Loading';
+
+const PAGE_SIZE = 15;
 
 export default function CategoryPage() {
   const params = useParams();
@@ -20,37 +22,139 @@ export default function CategoryPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [subcategories, setSubcategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
   const { trackPageView } = useEvent();
+
+  // Pre-fetched next page data
+  const nextPageDataRef = useRef<Product[] | null>(null);
+  const isFetchingNextRef = useRef(false);
+
+  // Intersection Observer ref for infinite scroll
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     trackPageView('CATEGORY', `/categories/${categoryId}`);
   }, [trackPageView, categoryId]);
 
+  // Fetch products for a specific page
+  const fetchProducts = useCallback(async (pageNum: number) => {
+    const response = await api.getProductsByCategory(categoryId, pageNum, PAGE_SIZE);
+    return {
+      content: response.content || [],
+      totalPages: response.totalPages || 0,
+    };
+  }, [categoryId]);
+
+  // Pre-fetch next page in background
+  const prefetchNextPage = useCallback(async (currentPage: number, currentTotalPages: number) => {
+    if (currentPage >= currentTotalPages - 1 || isFetchingNextRef.current) return;
+
+    isFetchingNextRef.current = true;
+    try {
+      const nextData = await fetchProducts(currentPage + 1);
+      nextPageDataRef.current = nextData.content;
+    } catch (error) {
+      console.error('Failed to prefetch next page:', error);
+      nextPageDataRef.current = null;
+    } finally {
+      isFetchingNextRef.current = false;
+    }
+  }, [fetchProducts]);
+
+  // Load initial data when category changes
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
+      setProducts([]);
+      setPage(0);
+      nextPageDataRef.current = null;
+      isFetchingNextRef.current = false;
+
       try {
         const [categoryData, productsData, subcategoriesData] = await Promise.all([
           api.getCategory(categoryId),
-          api.getProductsByCategory(categoryId, page, 20),
+          api.getProductsByCategory(categoryId, 0, PAGE_SIZE),
           api.getSubcategories(categoryId).catch(() => []),
         ]);
 
         setCategory(categoryData);
-        setProducts(productsData.content);
-        setTotalPages(productsData.totalPages);
+        setProducts(productsData.content || []);
+        setTotalPages(productsData.totalPages || 0);
         setSubcategories(subcategoriesData);
+        setHasMore((productsData.totalPages || 0) > 1);
+
+        // Pre-fetch next page
+        if ((productsData.totalPages || 0) > 1) {
+          prefetchNextPage(0, productsData.totalPages || 0);
+        }
       } catch (error) {
         console.error('Failed to load category:', error);
+        setHasMore(false);
       } finally {
         setIsLoading(false);
       }
     };
 
     loadData();
-  }, [categoryId, page]);
+  }, [categoryId, prefetchNextPage]);
+
+  // Load more products (for infinite scroll)
+  const loadMoreProducts = useCallback(async () => {
+    if (isLoadingMore || !hasMore || page >= totalPages - 1) return;
+
+    setIsLoadingMore(true);
+    const nextPage = page + 1;
+
+    try {
+      let newProducts: Product[];
+
+      // Use pre-fetched data if available
+      if (nextPageDataRef.current) {
+        newProducts = nextPageDataRef.current;
+        nextPageDataRef.current = null;
+      } else {
+        const data = await fetchProducts(nextPage);
+        newProducts = data.content;
+      }
+
+      setProducts(prev => [...prev, ...newProducts]);
+      setPage(nextPage);
+      setHasMore(nextPage < totalPages - 1);
+
+      // Pre-fetch the next page
+      prefetchNextPage(nextPage, totalPages);
+    } catch (error) {
+      console.error('Failed to load more products:', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [isLoadingMore, hasMore, page, totalPages, fetchProducts, prefetchNextPage]);
+
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoading && !isLoadingMore) {
+          loadMoreProducts();
+        }
+      },
+      { threshold: 0.1, rootMargin: '100px' }
+    );
+
+    const currentRef = loadMoreRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [hasMore, isLoading, isLoadingMore, loadMoreProducts]);
 
   if (isLoading && !category) {
     return <PageLoader />;
@@ -93,7 +197,9 @@ export default function CategoryPage() {
             <p className="text-surface-600 max-w-2xl">{category.description}</p>
           )}
           <p className="text-surface-500 mt-2">
-            {category.productCount} {category.productCount === 1 ? 'product' : 'products'}
+            Showing <span className="font-medium text-surface-700">{products.length.toLocaleString()}</span> of{' '}
+            <span className="font-medium text-surface-700">{(category.productCount || 0).toLocaleString()}</span>{' '}
+            {category.productCount === 1 ? 'product' : 'products'}
           </p>
         </div>
 
@@ -132,24 +238,20 @@ export default function CategoryPage() {
               emptyMessage={`No products found in ${category.name}. Check back soon!`}
             />
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="mt-8 flex justify-center gap-2">
-                {Array.from({ length: totalPages }, (_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setPage(i)}
-                    className={`h-10 w-10 rounded-lg font-medium transition-colors ${
-                      page === i
-                        ? 'bg-primary-600 text-white'
-                        : 'bg-white border border-surface-300 text-surface-700 hover:bg-surface-50'
-                    }`}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
-              </div>
-            )}
+            {/* Infinite Scroll Trigger & Loading Indicator */}
+            <div ref={loadMoreRef} className="mt-8 flex justify-center">
+              {isLoadingMore && (
+                <div className="flex items-center gap-2 text-surface-500 py-4">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span className="text-sm">Loading more products...</span>
+                </div>
+              )}
+              {!hasMore && products.length > 0 && !isLoading && (
+                <p className="text-surface-400 text-sm py-4">
+                  You've reached the end of the list
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>
