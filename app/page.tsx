@@ -7,12 +7,13 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { Product, Category, SuggestionsResponse } from '@/lib/types';
+import { Product, Category, SuggestionsResponse, SuggestedProduct } from '@/lib/types';
 import { api } from '@/lib/api';
 import { calculateDiscount } from '@/lib/utils';
 import { useEvent } from '@/context/EventContext';
 import { useAuth } from '@/context/AuthContext';
 import { Skeleton } from '@/components/ui/Loading';
+import RecommendationBadge from '@/components/products/RecommendationBadge';
 
 export default function HomePage() {
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
@@ -226,17 +227,23 @@ export default function HomePage() {
                 </Link>
               </div>
             ) : (
-              suggestions.products.slice(0, 12).map((product) => (
+              suggestions.products.slice(0, 12).map((suggestion) => (
                 <Link
-                  key={product.id}
-                  href={`/products/${product.id}?source=recommendation`}
-                  className="p-4 hover:shadow-lg transition-shadow text-center group"
+                  key={suggestion.product.id}
+                  href={`/products/${suggestion.product.id}?source=recommendation`}
+                  className="p-4 hover:shadow-lg transition-shadow text-center group relative"
                 >
+                  {/* Recommendation Badge */}
+                  {suggestion.reason && (
+                    <div className="mb-2">
+                      <RecommendationBadge reason={suggestion.reason} strategy={suggestion.strategy} />
+                    </div>
+                  )}
                   <div className="h-32 flex items-center justify-center mb-3">
-                    {product.thumbnailUrl ? (
+                    {suggestion.product.thumbnailUrl ? (
                       <Image
-                        src={product.thumbnailUrl}
-                        alt={product.name}
+                        src={suggestion.product.thumbnailUrl}
+                        alt={suggestion.product.name}
                         width={120}
                         height={120}
                         className="object-contain max-h-full group-hover:scale-105 transition-transform"
@@ -248,13 +255,13 @@ export default function HomePage() {
                     )}
                   </div>
                   <h3 className="text-sm text-gray-900 font-medium line-clamp-2 mb-1 group-hover:text-[#2874f0] transition-colors">
-                    {product.name}
+                    {suggestion.product.name}
                   </h3>
                   <p className="text-sm font-bold text-gray-900">
-                    ₹{formatPrice(product.price)}
+                    ₹{formatPrice(suggestion.product.price)}
                   </p>
-                  {product.compareAtPrice && product.compareAtPrice > product.price && (
-                    <p className="text-xs text-green-600 font-medium">{calculateDiscount(product.compareAtPrice, product.price)}% off</p>
+                  {suggestion.product.compareAtPrice && suggestion.product.compareAtPrice > suggestion.product.price && (
+                    <p className="text-xs text-green-600 font-medium">{calculateDiscount(suggestion.product.compareAtPrice, suggestion.product.price)}% off</p>
                   )}
                 </Link>
               ))

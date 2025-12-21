@@ -316,12 +316,22 @@ export interface UserProfileEvent {
 }
 
 // Suggestions Types
+export type SuggestionStrategy = 'ai_intent' | 'similar_products' | 'category_affinity' | 'trending';
+
+export interface SuggestedProduct {
+  product: Product;
+  reason: string;
+  strategy: SuggestionStrategy;
+  score?: number | null;
+}
+
 export interface SuggestionsResponse {
-  products: Product[];
+  products: SuggestedProduct[];
   totalCount: number;
   personalized: boolean;
   strategies: Record<string, string>;
   userId: string | null;
+  lastUpdated?: string | null;
 }
 
 // API Error
