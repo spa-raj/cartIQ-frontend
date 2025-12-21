@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { SlidersHorizontal, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { SlidersHorizontal, X, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { api } from '@/lib/api';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -139,6 +139,7 @@ export default function ProductFilters({ onFilterChange }: ProductFiltersProps) 
                 placeholder="Min"
                 value={minPrice}
                 onChange={(e) => setMinPrice(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
                 className="w-20 px-2 py-1.5 text-xs border border-surface-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
               <span className="text-surface-400 text-xs">-</span>
@@ -147,8 +148,16 @@ export default function ProductFilters({ onFilterChange }: ProductFiltersProps) 
                 placeholder="Max"
                 value={maxPrice}
                 onChange={(e) => setMaxPrice(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
                 className="w-20 px-2 py-1.5 text-xs border border-surface-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
+              <button
+                onClick={applyFilters}
+                className="ml-1 px-3 py-1.5 text-xs font-medium bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors flex items-center gap-1"
+              >
+                <Search className="h-3 w-3" />
+                Filter
+              </button>
             </div>
           </div>
 
