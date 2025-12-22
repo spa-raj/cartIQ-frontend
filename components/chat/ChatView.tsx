@@ -34,6 +34,8 @@ interface ChatViewProps {
   clearCompareProducts: () => void;
   // This prop is for the product card links, which differ between popup and full-page
   productUrlSource?: string;
+  // Optional suggested questions to show when chat is empty
+  suggestedQuestions?: string[];
 }
 
 export function ChatView({
@@ -49,12 +51,13 @@ export function ChatView({
   toggleCompareProduct,
   handleCompare,
   clearCompareProducts,
-  productUrlSource = 'recommendation'
+  productUrlSource = 'recommendation',
+  suggestedQuestions = [],
 }: ChatViewProps) {
   return (
     <>
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto bg-surface-50">
         <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
           {messages.map((message) => (
             <div key={message.id} className="animate-fade-in">
@@ -203,7 +206,27 @@ export function ChatView({
         onRemove={toggleCompareProduct}
         onClear={clearCompareProducts}
       />
-      
+
+      {/* Suggested Questions */}
+      {suggestedQuestions.length > 0 && messages.length === 1 && !isLoading && (
+        <div className="bg-white border-t border-surface-200">
+          <div className="max-w-4xl mx-auto px-4 pt-4 pb-2">
+            <p className="text-sm text-surface-500 mb-3">Try asking:</p>
+            <div className="flex flex-wrap gap-2">
+              {suggestedQuestions.map((question, i) => (
+                <button
+                  key={i}
+                  onClick={() => setInput(question)}
+                  className="px-4 py-2 bg-white border border-surface-200 rounded-full text-sm text-surface-700 hover:border-primary-300 hover:bg-primary-50 transition-colors"
+                >
+                  {question}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Input */}
       <div className="bg-white border-t border-surface-200">
         <form onSubmit={handleSubmit} className="max-w-4xl mx-auto px-4 py-4">

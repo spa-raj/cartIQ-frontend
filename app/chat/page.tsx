@@ -41,28 +41,8 @@ export default function ChatPage() {
       </div>
 
       <div className="flex-1 flex flex-col overflow-hidden relative">
-        <ChatView {...chat} productUrlSource="chat_recommendation" />
+        <ChatView {...chat} productUrlSource="chat_recommendation" suggestedQuestions={suggestedQuestions} />
       </div>
-
-      {/* Suggested Questions & Footer outside ChatView so they can be scrolled independently if needed */}
-      {chat.messages.length === 1 && !chat.isLoading && (
-        <div className="bg-white border-t border-surface-200">
-            <div className="max-w-4xl mx-auto px-4 pt-4 pb-2">
-                <p className="text-sm text-surface-500 mb-3">Try asking:</p>
-                <div className="flex flex-wrap gap-2">
-                    {suggestedQuestions.map((question, i) => (
-                        <button
-                            key={i}
-                            onClick={() => chat.setInput(question)}
-                            className="px-4 py-2 bg-white border border-surface-200 rounded-full text-sm text-surface-700 hover:border-primary-300 hover:bg-primary-50 transition-colors"
-                        >
-                            {question}
-                        </button>
-                    ))}
-                </div>
-            </div>
-        </div>
-      )}
        <div className="bg-white">
           <p className="text-xs text-surface-400 text-center pb-3">
               AI recommendations are personalized based on your browsing activity via real-time Kafka
