@@ -117,10 +117,10 @@ export default function ChatPage() {
   };
 
   const suggestedQuestions = [
-    'Show me popular electronics under ₹40000',
-    'What running shoes do you recommend?',
-    'Find me deals on home appliances',
-    'Compare top-rated headphones',
+    'Recommend me headphones under ₹7000',
+    'Compare iPhone 15 and iPhone 16',
+    'Find women\'s kurtas under ₹5000',
+    'What\'s the best budget smartphone?',
   ];
 
   return (
