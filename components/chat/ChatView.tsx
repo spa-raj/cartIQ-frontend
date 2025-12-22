@@ -36,6 +36,8 @@ interface ChatViewProps {
   productUrlSource?: string;
   // Optional suggested questions to show when chat is empty
   suggestedQuestions?: string[];
+  // Compact mode for popup (single column, smaller text)
+  compact?: boolean;
 }
 
 export function ChatView({
@@ -53,6 +55,7 @@ export function ChatView({
   clearCompareProducts,
   productUrlSource = 'recommendation',
   suggestedQuestions = [],
+  compact = false,
 }: ChatViewProps) {
   return (
     <>
@@ -92,52 +95,52 @@ export function ChatView({
 
               {/* Product Cards */}
               {message.products && message.products.length > 0 && (
-                <div className="mt-4 ml-14 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className={`mt-4 grid gap-3 ${compact ? 'ml-0 grid-cols-1' : 'ml-14 grid-cols-1 sm:grid-cols-2 gap-4'}`}>
                   {message.products.map((product) => (
                     <div
                       key={product.id}
-                      className="bg-white border border-surface-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow"
+                      className={`bg-white border border-surface-200 rounded-xl shadow-sm hover:shadow-md transition-shadow ${compact ? 'p-3' : 'p-4'}`}
                     >
-                      <div className="flex gap-4">
+                      <div className={`flex ${compact ? 'gap-3' : 'gap-4'}`}>
                         <Link href={`/products/${product.id}?source=${productUrlSource}`}>
-                          <div className="relative h-20 w-20 rounded-lg overflow-hidden bg-surface-100 flex-shrink-0">
+                          <div className={`relative rounded-lg overflow-hidden bg-surface-100 flex-shrink-0 ${compact ? 'h-16 w-16' : 'h-20 w-20'}`}>
                             <Image
-                              src={product.thumbnailUrl || getPlaceholderImage(80, 80)}
+                              src={product.thumbnailUrl || getPlaceholderImage(compact ? 64 : 80, compact ? 64 : 80)}
                               alt={product.name}
                               fill
                               className="object-cover"
-                              sizes="80px"
+                              sizes={compact ? '64px' : '80px'}
                             />
                           </div>
                         </Link>
                         <div className="flex-1 min-w-0">
                           <Link
                             href={`/products/${product.id}?source=${productUrlSource}`}
-                            className="font-medium text-surface-900 hover:text-primary-600 line-clamp-2"
+                            className={`font-medium text-surface-900 hover:text-primary-600 ${compact ? 'text-sm line-clamp-2' : 'line-clamp-2'}`}
                           >
                             {product.name}
                           </Link>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-sm text-surface-500">{product.brand}</span>
+                          <div className={`flex items-center gap-2 ${compact ? 'mt-0.5' : 'mt-1'}`}>
+                            <span className={`text-surface-500 ${compact ? 'text-xs' : 'text-sm'}`}>{product.brand}</span>
                             {product.rating > 0 && (
-                              <span className="flex items-center gap-0.5 text-sm text-yellow-600">
-                                <Star className="h-3.5 w-3.5 fill-current" />
+                              <span className={`flex items-center gap-0.5 text-yellow-600 ${compact ? 'text-xs' : 'text-sm'}`}>
+                                <Star className={`fill-current ${compact ? 'h-3 w-3' : 'h-3.5 w-3.5'}`} />
                                 {product.rating.toFixed(1)}
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center justify-between mt-3">
-                            <span className="text-lg font-bold text-primary-600">
+                          <div className={`flex items-center justify-between ${compact ? 'mt-2' : 'mt-3'}`}>
+                            <span className={`font-bold text-primary-600 ${compact ? 'text-base' : 'text-lg'}`}>
                               {formatPrice(product.price, 'INR')}
                             </span>
-                            <div className="flex items-center gap-2">
+                            <div className={`flex items-center ${compact ? 'gap-1' : 'gap-2'}`}>
                               <button
                                 onClick={() => toggleCompareProduct(product)}
                                 disabled={
                                   !isProductInCompare(product.id) &&
                                   compareProducts.length >= MAX_COMPARE_PRODUCTS
                                 }
-                                className={`p-2 rounded-lg transition-colors ${
+                                className={`rounded-lg transition-colors ${compact ? 'p-1.5' : 'p-2'} ${
                                   isProductInCompare(product.id)
                                     ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
                                     : compareProducts.length >= MAX_COMPARE_PRODUCTS
@@ -153,9 +156,9 @@ export function ChatView({
                                 }
                               >
                                 {isProductInCompare(product.id) ? (
-                                  <Check className="h-4 w-4" />
+                                  <Check className={compact ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
                                 ) : (
-                                  <Scale className="h-4 w-4" />
+                                  <Scale className={compact ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
                                 )}
                               </button>
                               {product.inStock ? (
@@ -163,12 +166,13 @@ export function ChatView({
                                   size="sm"
                                   variant="primary"
                                   onClick={() => handleAddToCart(product)}
-                                  leftIcon={<ShoppingCart className="h-4 w-4" />}
+                                  leftIcon={<ShoppingCart className={compact ? 'h-3.5 w-3.5' : 'h-4 w-4'} />}
+                                  className={compact ? 'text-xs px-2 py-1' : ''}
                                 >
                                   Add
                                 </Button>
                               ) : (
-                                <span className="text-sm text-red-500">Out of Stock</span>
+                                <span className={`text-red-500 ${compact ? 'text-xs' : 'text-sm'}`}>Out of Stock</span>
                               )}
                             </div>
                           </div>

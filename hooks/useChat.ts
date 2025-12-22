@@ -1,4 +1,5 @@
 
+
 import { useState, useRef, useEffect } from 'react';
 import { ChatMessage, ChatProductDTO } from '@/lib/types';
 import { api } from '@/lib/api';
