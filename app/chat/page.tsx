@@ -11,6 +11,8 @@ import {
   ArrowLeft,
   ShoppingCart,
   Star,
+  Scale,
+  Check,
 } from 'lucide-react';
 import { ChatMessage, ChatProductDTO } from '@/lib/types';
 import { api } from '@/lib/api';
@@ -20,6 +22,9 @@ import { useCart } from '@/context/CartContext';
 import { formatPrice, getPlaceholderImage } from '@/lib/utils';
 import Button from '@/components/ui/Button';
 import ChatMarkdown from '@/components/chat/ChatMarkdown';
+import { CompareBar } from '@/components/chat/CompareBar';
+
+const MAX_COMPARE_PRODUCTS = 2;
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -34,6 +39,7 @@ export default function ChatPage() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [chatSessionId, setChatSessionId] = useState<string | null>(null);
+  const [compareProducts, setCompareProducts] = useState<ChatProductDTO[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { trackPageView, recentlyViewedProductIds, recentCategories } = useEvent();
   const { isAuthenticated, user } = useAuth();
@@ -47,19 +53,17 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || isLoading) return;
+  const sendMessage = async (messageContent: string) => {
+    if (!messageContent.trim() || isLoading) return;
 
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
       role: 'user',
-      content: input.trim(),
+      content: messageContent.trim(),
       timestamp: new Date().toISOString(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
-    setInput('');
     setIsLoading(true);
 
     try {
@@ -69,13 +73,12 @@ export default function ChatPage() {
           userId: user?.id,
           recentlyViewedProductIds,
           recentCategories,
-          cartProductIds: cart?.items?.map(item => item.productId),
+          cartProductIds: cart?.items?.map((item) => item.productId),
           cartTotal: cart?.totalAmount,
         },
-        chatSessionId || undefined
+        chatSessionId || undefined,
       );
 
-      // Store session ID for conversation continuity
       if (!chatSessionId && response.sessionId) {
         setChatSessionId(response.sessionId);
       }
@@ -95,13 +98,19 @@ export default function ChatPage() {
         id: crypto.randomUUID(),
         role: 'assistant',
         content:
-          "I apologize, but I'm having trouble connecting right now. Please try again in a moment, or browse our products directly.",
+          "I apologize, but I'm having trouble connecting right now. Please try again in a moment.",
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await sendMessage(input);
+    setInput('');
   };
 
   const handleAddToCart = async (product: ChatProductDTO) => {
@@ -116,11 +125,39 @@ export default function ChatPage() {
     }
   };
 
+  const isProductInCompare = (productId: string) => {
+    return compareProducts.some((p) => p.id === productId);
+  };
+
+  const toggleCompareProduct = (product: ChatProductDTO) => {
+    if (isProductInCompare(product.id)) {
+      setCompareProducts((prev) => prev.filter((p) => p.id !== product.id));
+    } else if (compareProducts.length < MAX_COMPARE_PRODUCTS) {
+      setCompareProducts((prev) => [...prev, product]);
+    }
+  };
+
+  const handleCompare = async () => {
+    if (compareProducts.length !== MAX_COMPARE_PRODUCTS || isLoading) return;
+
+    const [product1, product2] = compareProducts;
+    const comparePrompt = `Compare "${product1.name}" (${product1.brand}, ${formatPrice(
+      product1.price,
+      'INR',
+    )}) with "${product2.name}" (${product2.brand}, ${formatPrice(
+      product2.price,
+      'INR',
+    )}). Help me decide which one to buy.`;
+
+    setCompareProducts([]);
+    await sendMessage(comparePrompt);
+  };
+
   const suggestedQuestions = [
     'Recommend me headphones under ₹7000',
     'Compare iPhone 15 and iPhone 16',
-    'Find women\'s kurtas under ₹5000',
-    'What\'s the best budget smartphone?',
+    "Find women's kurtas under ₹5000",
+    "What's the best budget smartphone?",
   ];
 
   return (
@@ -220,18 +257,47 @@ export default function ChatPage() {
                             <span className="text-lg font-bold text-primary-600">
                               {formatPrice(product.price, 'INR')}
                             </span>
-                            {product.inStock ? (
-                              <Button
-                                size="sm"
-                                variant="primary"
-                                onClick={() => handleAddToCart(product)}
-                                leftIcon={<ShoppingCart className="h-4 w-4" />}
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => toggleCompareProduct(product)}
+                                disabled={
+                                  !isProductInCompare(product.id) &&
+                                  compareProducts.length >= MAX_COMPARE_PRODUCTS
+                                }
+                                className={`p-2 rounded-lg transition-colors ${
+                                  isProductInCompare(product.id)
+                                    ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                                    : compareProducts.length >= MAX_COMPARE_PRODUCTS
+                                    ? 'bg-surface-100 text-surface-400 cursor-not-allowed'
+                                    : 'bg-surface-100 text-surface-600 hover:bg-surface-200'
+                                }`}
+                                title={
+                                  isProductInCompare(product.id)
+                                    ? 'Remove from compare'
+                                    : compareProducts.length >= MAX_COMPARE_PRODUCTS
+                                    ? `Max ${MAX_COMPARE_PRODUCTS} products to compare`
+                                    : 'Add to compare'
+                                }
                               >
-                                Add
-                              </Button>
-                            ) : (
-                              <span className="text-sm text-red-500">Out of Stock</span>
-                            )}
+                                {isProductInCompare(product.id) ? (
+                                  <Check className="h-4 w-4" />
+                                ) : (
+                                  <Scale className="h-4 w-4" />
+                                )}
+                              </button>
+                              {product.inStock ? (
+                                <Button
+                                  size="sm"
+                                  variant="primary"
+                                  onClick={() => handleAddToCart(product)}
+                                  leftIcon={<ShoppingCart className="h-4 w-4" />}
+                                >
+                                  Add
+                                </Button>
+                              ) : (
+                                <span className="text-sm text-red-500">Out of Stock</span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -277,6 +343,14 @@ export default function ChatPage() {
           </div>
         </div>
       )}
+
+      {/* Compare Bar */}
+      <CompareBar
+        compareProducts={compareProducts}
+        onCompare={handleCompare}
+        onRemove={toggleCompareProduct}
+        onClear={() => setCompareProducts([])}
+      />
 
       {/* Input */}
       <div className="bg-white border-t border-surface-200 sticky bottom-0">
