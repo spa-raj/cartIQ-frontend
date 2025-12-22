@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ChevronUp } from 'lucide-react';
+import { ChevronUp, Github } from 'lucide-react';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -25,37 +25,10 @@ export default function Footer() {
 
       {/* Main Footer */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-          {/* Get to Know Us */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
+          {/* Shop */}
           <div>
-            <h3 className="text-white font-bold mb-4">Get to Know Us</h3>
-            <ul className="space-y-3">
-              <li>
-                <Link href="#" className="text-sm hover:text-primary-400 hover:underline transition-colors">
-                  About CartIQ
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="text-sm hover:text-primary-400 hover:underline transition-colors">
-                  Careers
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="text-sm hover:text-primary-400 hover:underline transition-colors">
-                  Press Releases
-                </Link>
-              </li>
-              <li>
-                <Link href="/chat" className="text-sm hover:text-primary-400 hover:underline transition-colors">
-                  AI Technology
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Shop With Us */}
-          <div>
-            <h3 className="text-white font-bold mb-4">Shop With Us</h3>
+            <h3 className="text-white font-bold mb-4">Shop</h3>
             <ul className="space-y-3">
               <li>
                 <Link href="/products" className="text-sm hover:text-primary-400 hover:underline transition-colors">
@@ -64,12 +37,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link href="/products?featured=true" className="text-sm hover:text-primary-400 hover:underline transition-colors">
-                  Today's Deals
-                </Link>
-              </li>
-              <li>
-                <Link href="/categories" className="text-sm hover:text-primary-400 hover:underline transition-colors">
-                  Categories
+                  Today&apos;s Deals
                 </Link>
               </li>
               <li>
@@ -80,9 +48,9 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Let Us Help You */}
+          {/* Your Account */}
           <div>
-            <h3 className="text-white font-bold mb-4">Let Us Help You</h3>
+            <h3 className="text-white font-bold mb-4">Your Account</h3>
             <ul className="space-y-3">
               <li>
                 <Link href="/orders" className="text-sm hover:text-primary-400 hover:underline transition-colors">
@@ -95,45 +63,37 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-sm hover:text-primary-400 hover:underline transition-colors">
-                  Shipping Rates
-                </Link>
-              </li>
-              <li>
-                <Link href="#" className="text-sm hover:text-primary-400 hover:underline transition-colors">
-                  Returns & Refunds
-                </Link>
-              </li>
-              <li>
                 <Link href="/chat" className="text-sm hover:text-primary-400 hover:underline transition-colors">
-                  AI Assistant Help
+                  AI Assistant
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Connect With Us */}
+          {/* GitHub */}
           <div>
-            <h3 className="text-white font-bold mb-4">Connect With Us</h3>
+            <h3 className="text-white font-bold mb-4">GitHub</h3>
             <ul className="space-y-3">
               <li>
-                <a href="#" className="text-sm hover:text-primary-400 hover:underline transition-colors">
-                  Facebook
+                <a
+                  href="https://github.com/spa-raj/cartIQ-frontend"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm hover:text-primary-400 hover:underline transition-colors flex items-center gap-2"
+                >
+                  <Github className="h-4 w-4" />
+                  Frontend Repo
                 </a>
               </li>
               <li>
-                <a href="#" className="text-sm hover:text-primary-400 hover:underline transition-colors">
-                  Twitter
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-sm hover:text-primary-400 hover:underline transition-colors">
-                  Instagram
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-sm hover:text-primary-400 hover:underline transition-colors">
-                  YouTube
+                <a
+                  href="https://github.com/spa-raj/cartIQ-backend"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm hover:text-primary-400 hover:underline transition-colors flex items-center gap-2"
+                >
+                  <Github className="h-4 w-4" />
+                  Backend Repo
                 </a>
               </li>
             </ul>
@@ -155,21 +115,6 @@ export default function Footer() {
                 className="h-8 w-auto object-contain"
               />
             </Link>
-
-            {/* Links */}
-            <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-surface-400">
-              <Link href="#" className="hover:text-primary-400 transition-colors">
-                Conditions of Use
-              </Link>
-              <span className="text-surface-600">|</span>
-              <Link href="#" className="hover:text-primary-400 transition-colors">
-                Privacy Notice
-              </Link>
-              <span className="text-surface-600">|</span>
-              <Link href="#" className="hover:text-primary-400 transition-colors">
-                Interest-Based Ads
-              </Link>
-            </div>
 
             {/* Copyright */}
             <p className="text-xs text-surface-500">
