@@ -209,6 +209,7 @@ export function ChatView({
         onCompare={handleCompare}
         onRemove={toggleCompareProduct}
         onClear={clearCompareProducts}
+        compact={compact}
       />
 
       {/* Suggested Questions */}
