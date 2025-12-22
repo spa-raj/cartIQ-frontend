@@ -17,7 +17,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
   }, [chat.trackPageView]);
 
   return (
-    <div className="w-[440px] h-[700px] bg-surface-50 rounded-2xl shadow-2xl border border-surface-200 flex flex-col overflow-hidden">
+    <div className="w-[500px] h-[700px] bg-white rounded-2xl shadow-2xl border border-surface-200 flex flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-surface-200 bg-white">
         <div className="flex items-center gap-3">
@@ -34,7 +34,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
         </button>
       </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden relative">
+      <div className="flex-1 flex flex-col overflow-hidden relative bg-surface-50">
         <ChatView {...chat} productUrlSource="chat_popup_recommendation" compact />
       </div>
        <div className="bg-white border-t border-surface-200">
