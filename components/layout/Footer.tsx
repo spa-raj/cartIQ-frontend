@@ -2,7 +2,6 @@
 
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { ChevronUp, Github } from 'lucide-react';
 
 export default function Footer() {
@@ -107,13 +106,7 @@ export default function Footer() {
           <div className="flex flex-col items-center gap-4">
             {/* Logo */}
             <Link href="/" className="flex items-center">
-              <Image
-                src="/images/cartIQ-logo.png"
-                alt="CartIQ"
-                width={100}
-                height={32}
-                className="h-8 w-auto object-contain"
-              />
+              <span className="text-2xl font-bold text-[#2874f0] italic">CartIQ</span>
             </Link>
 
             {/* Copyright */}
