@@ -68,7 +68,7 @@ export default function HomePage() {
         // Fetch categories and electronics in parallel
         const [categoriesRes, electronicsRes] = await Promise.allSettled([
           api.getCategories(),
-          api.searchProducts('electronics', 0, 8),
+          api.getBestOfElectronics(0, 8),
         ]);
 
         // Handle categories result
@@ -431,7 +431,7 @@ export default function HomePage() {
             <div className="flex items-center justify-between p-4 border-b border-gray-100">
               <h2 className="text-xl font-bold text-gray-900">Best of Electronics</h2>
               <Link
-                href="/products?search=electronics"
+                href="/products?bestOfElectronics=true"
                 className="px-6 py-2 bg-[#2874f0] text-white text-sm font-medium rounded-sm hover:bg-[#1a5dc8] transition-colors"
               >
                 VIEW ALL

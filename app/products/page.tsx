@@ -38,9 +38,10 @@ function ProductsPageContent() {
   const brands = searchParams.get('brands');
   const sort = searchParams.get('sort') || 'createdAt,desc';
   const featured = searchParams.get('featured');
+  const bestOfElectronics = searchParams.get('bestOfElectronics');
 
   // Create a filter key to detect filter changes
-  const filterKey = `${search}-${categoryId}-${minPrice}-${maxPrice}-${brands}-${sort}-${featured}`;
+  const filterKey = `${search}-${categoryId}-${minPrice}-${maxPrice}-${brands}-${sort}-${featured}-${bestOfElectronics}`;
 
   useEffect(() => {
     trackPageView('PRODUCTS', '/products');
@@ -66,6 +67,8 @@ function ProductsPageContent() {
       );
     } else if (featured === 'true') {
       response = await api.getFeaturedProducts(PAGE_SIZE, pageNum);
+    } else if (bestOfElectronics === 'true') {
+      response = await api.getBestOfElectronics(pageNum, PAGE_SIZE);
     } else {
       response = await api.getProducts(pageNum, PAGE_SIZE, sort);
     }
@@ -75,7 +78,7 @@ function ProductsPageContent() {
       totalPages: response.page?.totalPages ?? 0,
       totalElements: response.page?.totalElements ?? 0,
     };
-  }, [search, categoryId, minPrice, maxPrice, sort, featured]);
+  }, [search, categoryId, minPrice, maxPrice, sort, featured, bestOfElectronics]);
 
   // Pre-fetch next page in background
   const prefetchNextPage = useCallback(async (currentPage: number, currentTotalPages: number) => {
@@ -184,6 +187,7 @@ function ProductsPageContent() {
   const getPageTitle = () => {
     if (search) return `Search results for "${search}"`;
     if (featured === 'true') return 'Featured Products';
+    if (bestOfElectronics === 'true') return 'Best of Electronics';
     return 'All Products';
   };
 
