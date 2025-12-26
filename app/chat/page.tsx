@@ -45,8 +45,7 @@ export default function ChatPage() {
       </div>
        <div className="bg-white">
           <p className="text-xs text-surface-400 text-center pb-3">
-              AI recommendations are personalized based on your browsing activity via real-time Kafka
-              streaming
+              Your searches help improve recommendations
           </p>
        </div>
     </div>

@@ -294,6 +294,9 @@ export default function HomePage() {
                 ))
               )}
             </div>
+            <p className="text-xs text-gray-400 text-center pb-3 px-4 italic">
+              Powered by real-time Kafka streaming based on your browsing activity
+            </p>
           </div>
         </section>
       )}
