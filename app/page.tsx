@@ -18,6 +18,7 @@ import RecommendationBadge from '@/components/products/RecommendationBadge';
 export default function HomePage() {
   const [trendingProducts, setTrendingProducts] = useState<Product[]>([]);
   const [electronicsProducts, setElectronicsProducts] = useState<Product[]>([]);
+  const [fashionProducts, setFashionProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [suggestions, setSuggestions] = useState<SuggestionsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -65,10 +66,11 @@ export default function HomePage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Fetch categories and electronics in parallel
-        const [categoriesRes, electronicsRes] = await Promise.allSettled([
+        // Fetch categories, electronics, and fashion in parallel
+        const [categoriesRes, electronicsRes, fashionRes] = await Promise.allSettled([
           api.getCategories(),
           api.getBestOfElectronics(0, 8),
+          api.getBestOfFashion(0, 8),
         ]);
 
         // Handle categories result
@@ -83,6 +85,13 @@ export default function HomePage() {
           setElectronicsProducts(electronicsRes.value.content);
         } else {
           console.error('Failed to load electronics:', electronicsRes.status === 'rejected' ? electronicsRes.reason : 'No content');
+        }
+
+        // Handle fashion result
+        if (fashionRes.status === 'fulfilled' && fashionRes.value?.content) {
+          setFashionProducts(fashionRes.value.content);
+        } else {
+          console.error('Failed to load fashion:', fashionRes.status === 'rejected' ? fashionRes.reason : 'No content');
         }
       } catch (error) {
         console.error('Failed to load home page data:', error);
@@ -423,80 +432,124 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* Products Grid with Side Banner */}
+      {/* Best of Electronics */}
       <section className="py-4 px-2 sm:px-4">
-        <div className="flex gap-4">
-          {/* Main Products Grid */}
-          <div className="flex-1 bg-white rounded-sm shadow-sm">
-            <div className="flex items-center justify-between p-4 border-b border-gray-100">
-              <h2 className="text-xl font-bold text-gray-900">Best of Electronics</h2>
-              <Link
-                href="/products?bestOfElectronics=true"
-                className="px-6 py-2 bg-[#2874f0] text-white text-sm font-medium rounded-sm hover:bg-[#1a5dc8] transition-colors"
-              >
-                VIEW ALL
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
-              {isLoading ? (
-                Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="p-4">
-                    <Skeleton className="h-32 w-full mb-3" />
-                    <Skeleton className="h-4 w-3/4 mb-2" />
-                    <Skeleton className="h-4 w-1/2" />
-                  </div>
-                ))
-              ) : electronicsProducts.length === 0 ? (
-                <div className="col-span-full py-12 text-center text-gray-500">
-                  <p>No electronics available</p>
-                </div>
-              ) : (
-                electronicsProducts.slice(0, 4).map((product) => (
-                  <Link
-                    key={product.id}
-                    href={`/products/${product.id}?source=home`}
-                    className="p-4 hover:shadow-lg transition-shadow text-center group border border-gray-100 rounded-sm"
-                  >
-                    <div className="h-32 flex items-center justify-center mb-3">
-                      {product.thumbnailUrl ? (
-                        <Image
-                          src={product.thumbnailUrl}
-                          alt={product.name}
-                          width={120}
-                          height={120}
-                          className="object-contain max-h-full group-hover:scale-105 transition-transform"
-                        />
-                      ) : (
-                        <div className="w-24 h-24 bg-gray-100 rounded flex items-center justify-center">
-                          <span className="text-gray-400 text-xs">No Image</span>
-                        </div>
-                      )}
-                    </div>
-                    <h3 className="text-sm text-gray-900 font-medium line-clamp-2 mb-1 group-hover:text-[#2874f0] transition-colors">
-                      {product.name}
-                    </h3>
-                    <p className="text-sm font-bold text-gray-900">
-                      ₹{formatPrice(product.price)}
-                    </p>
-                  </Link>
-                ))
-              )}
-            </div>
+        <div className="bg-white rounded-sm shadow-sm">
+          <div className="flex items-center justify-between p-4 border-b border-gray-100">
+            <h2 className="text-xl font-bold text-gray-900">Best of Electronics</h2>
+            <Link
+              href="/products?bestOfElectronics=true"
+              className="px-6 py-2 bg-[#2874f0] text-white text-sm font-medium rounded-sm hover:bg-[#1a5dc8] transition-colors"
+            >
+              VIEW ALL
+            </Link>
           </div>
 
-          {/* Side Banner */}
-          <div className="hidden lg:block w-[300px] flex-shrink-0">
-            <div className="bg-[#fff5e6] rounded-sm shadow-sm h-full p-6 flex flex-col justify-center">
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Shop your fashion Needs</h3>
-              <p className="text-sm text-gray-600 mb-4">with Latest &<br />Trendy Choices</p>
-              <Link
-                href="/products?category=fashion"
-                className="inline-block px-4 py-2 bg-[#2874f0] text-white text-sm font-medium rounded-sm hover:bg-[#1a5dc8] transition-colors w-fit"
-              >
-                Shop Now
-              </Link>
-            </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4 p-4">
+            {isLoading ? (
+              Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="p-4">
+                  <Skeleton className="h-32 w-full mb-3" />
+                  <Skeleton className="h-4 w-3/4 mb-2" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+              ))
+            ) : electronicsProducts.length === 0 ? (
+              <div className="col-span-full py-12 text-center text-gray-500">
+                <p>No electronics available</p>
+              </div>
+            ) : (
+              electronicsProducts.slice(0, 8).map((product) => (
+                <Link
+                  key={product.id}
+                  href={`/products/${product.id}?source=home`}
+                  className="p-4 hover:shadow-lg transition-shadow text-center group border border-gray-100 rounded-sm"
+                >
+                  <div className="h-32 flex items-center justify-center mb-3">
+                    {product.thumbnailUrl ? (
+                      <Image
+                        src={product.thumbnailUrl}
+                        alt={product.name}
+                        width={120}
+                        height={120}
+                        className="object-contain max-h-full group-hover:scale-105 transition-transform"
+                      />
+                    ) : (
+                      <div className="w-24 h-24 bg-gray-100 rounded flex items-center justify-center">
+                        <span className="text-gray-400 text-xs">No Image</span>
+                      </div>
+                    )}
+                  </div>
+                  <h3 className="text-sm text-gray-900 font-medium line-clamp-2 mb-1 group-hover:text-[#2874f0] transition-colors">
+                    {product.name}
+                  </h3>
+                  <p className="text-sm font-bold text-gray-900">
+                    ₹{formatPrice(product.price)}
+                  </p>
+                </Link>
+              ))
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Best of Fashion */}
+      <section className="py-4 px-2 sm:px-4">
+        <div className="bg-white rounded-sm shadow-sm">
+          <div className="flex items-center justify-between p-4 border-b border-gray-100">
+            <h2 className="text-xl font-bold text-gray-900">Best of Fashion</h2>
+            <Link
+              href="/products?bestOfFashion=true"
+              className="px-6 py-2 bg-[#2874f0] text-white text-sm font-medium rounded-sm hover:bg-[#1a5dc8] transition-colors"
+            >
+              VIEW ALL
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4 p-4">
+            {isLoading ? (
+              Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="p-4">
+                  <Skeleton className="h-32 w-full mb-3" />
+                  <Skeleton className="h-4 w-3/4 mb-2" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+              ))
+            ) : fashionProducts.length === 0 ? (
+              <div className="col-span-full py-12 text-center text-gray-500">
+                <p>No fashion products available</p>
+              </div>
+            ) : (
+              fashionProducts.slice(0, 8).map((product) => (
+                <Link
+                  key={product.id}
+                  href={`/products/${product.id}?source=home`}
+                  className="p-4 hover:shadow-lg transition-shadow text-center group border border-gray-100 rounded-sm"
+                >
+                  <div className="h-32 flex items-center justify-center mb-3">
+                    {product.thumbnailUrl ? (
+                      <Image
+                        src={product.thumbnailUrl}
+                        alt={product.name}
+                        width={120}
+                        height={120}
+                        className="object-contain max-h-full group-hover:scale-105 transition-transform"
+                      />
+                    ) : (
+                      <div className="w-24 h-24 bg-gray-100 rounded flex items-center justify-center">
+                        <span className="text-gray-400 text-xs">No Image</span>
+                      </div>
+                    )}
+                  </div>
+                  <h3 className="text-sm text-gray-900 font-medium line-clamp-2 mb-1 group-hover:text-[#2874f0] transition-colors">
+                    {product.name}
+                  </h3>
+                  <p className="text-sm font-bold text-gray-900">
+                    ₹{formatPrice(product.price)}
+                  </p>
+                </Link>
+              ))
+            )}
           </div>
         </div>
       </section>

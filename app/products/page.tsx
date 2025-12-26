@@ -39,9 +39,10 @@ function ProductsPageContent() {
   const sort = searchParams.get('sort') || 'createdAt,desc';
   const featured = searchParams.get('featured');
   const bestOfElectronics = searchParams.get('bestOfElectronics');
+  const bestOfFashion = searchParams.get('bestOfFashion');
 
   // Create a filter key to detect filter changes
-  const filterKey = `${search}-${categoryId}-${minPrice}-${maxPrice}-${brands}-${sort}-${featured}-${bestOfElectronics}`;
+  const filterKey = `${search}-${categoryId}-${minPrice}-${maxPrice}-${brands}-${sort}-${featured}-${bestOfElectronics}-${bestOfFashion}`;
 
   useEffect(() => {
     trackPageView('PRODUCTS', '/products');
@@ -69,6 +70,8 @@ function ProductsPageContent() {
       response = await api.getFeaturedProducts(PAGE_SIZE, pageNum);
     } else if (bestOfElectronics === 'true') {
       response = await api.getBestOfElectronics(pageNum, PAGE_SIZE);
+    } else if (bestOfFashion === 'true') {
+      response = await api.getBestOfFashion(pageNum, PAGE_SIZE);
     } else {
       response = await api.getProducts(pageNum, PAGE_SIZE, sort);
     }
@@ -78,7 +81,7 @@ function ProductsPageContent() {
       totalPages: response.page?.totalPages ?? 0,
       totalElements: response.page?.totalElements ?? 0,
     };
-  }, [search, categoryId, minPrice, maxPrice, sort, featured, bestOfElectronics]);
+  }, [search, categoryId, minPrice, maxPrice, sort, featured, bestOfElectronics, bestOfFashion]);
 
   // Pre-fetch next page in background
   const prefetchNextPage = useCallback(async (currentPage: number, currentTotalPages: number) => {
@@ -188,6 +191,7 @@ function ProductsPageContent() {
     if (search) return `Search results for "${search}"`;
     if (featured === 'true') return 'Featured Products';
     if (bestOfElectronics === 'true') return 'Best of Electronics';
+    if (bestOfFashion === 'true') return 'Best of Fashion';
     return 'All Products';
   };
 

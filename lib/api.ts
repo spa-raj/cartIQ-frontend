@@ -199,6 +199,15 @@ class ApiClient {
     );
   }
 
+  async getBestOfFashion(
+    page: number = 0,
+    size: number = 8
+  ): Promise<PaginatedResponse<Product>> {
+    return this.request<PaginatedResponse<Product>>(
+      `/api/products/best-of-fashion?page=${page}&size=${size}`
+    );
+  }
+
   async getProductsByIds(ids: string[]): Promise<Product[]> {
     return this.request<Product[]>('/api/products/batch', {
       method: 'POST',
