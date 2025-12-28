@@ -24,6 +24,10 @@ export const metadata: Metadata = {
     description: 'Experience personalized shopping with CartIQ',
     type: 'website',
   },
+  icons: {
+    icon: '/icon',
+    apple: '/apple-icon',
+  },
 };
 
 export default function RootLayout({
