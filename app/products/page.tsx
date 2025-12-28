@@ -236,7 +236,7 @@ function ProductsPageContent() {
             <ProductGrid
               products={products}
               isLoading={isLoading}
-              source={search ? 'search' : categoryId ? 'category' : 'direct'}
+              source={search ? 'SEARCH' : categoryId ? 'CATEGORY' : 'DIRECT'}
               searchQuery={search || undefined}
               emptyMessage={
                 search

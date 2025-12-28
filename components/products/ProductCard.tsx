@@ -17,7 +17,7 @@ interface ProductCardProps {
   onQuickView?: (product: Product) => void;
 }
 
-export default function ProductCard({ product, source = 'direct', searchQuery, onQuickView }: ProductCardProps) {
+export default function ProductCard({ product, source = 'DIRECT', searchQuery, onQuickView }: ProductCardProps) {
   const { addToCart, isLoading } = useCart();
   const { isAuthenticated } = useAuth();
 

@@ -42,7 +42,7 @@ function ProductDetailContent() {
   const hasTrackedRef = useRef<boolean>(false);
 
   // Get source and search query from URL params
-  const source = (searchParams.get('source') as ProductViewSource) || 'direct';
+  const source = (searchParams.get('source') as ProductViewSource) || 'DIRECT';
   const searchQuery = searchParams.get('q') || undefined;
 
   // Use ref to always have latest trackProductView (avoids stale closure with user auth)
@@ -84,6 +84,19 @@ function ProductDetailContent() {
         const data = await api.getProduct(productId);
         setProduct(data);
         productDataRef.current = data;
+
+        // Track product view immediately for reliability (before user navigates away)
+        // This ensures the event is sent even if user closes tab quickly
+        trackProductViewRef.current(
+          data.id,
+          data.name,
+          data.categoryName,
+          data.price,
+          sourceRef.current,
+          searchQueryRef.current,
+          undefined // viewDurationMs will be sent on unmount if user stays longer
+        );
+        hasTrackedRef.current = true;
 
         // Load related products
         if (data.categoryId) {
@@ -384,7 +397,7 @@ function ProductDetailContent() {
         {relatedProducts.length > 0 && (
           <section className="mt-16 pt-16 border-t border-surface-200">
             <h2 className="text-2xl font-bold text-surface-900 mb-8">You May Also Like</h2>
-            <ProductGrid products={relatedProducts} source="recommendation" />
+            <ProductGrid products={relatedProducts} source="RECOMMENDATION" />
           </section>
         )}
       </div>

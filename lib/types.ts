@@ -246,7 +246,8 @@ export interface UserEvent extends BaseEvent {
   referrer?: string;
 }
 
-export type ProductViewSource = 'search' | 'category' | 'home' | 'recommendation' | 'direct' | 'cart';
+// Backend expects uppercase source values for product-view events
+export type ProductViewSource = 'SEARCH' | 'CATEGORY' | 'RECOMMENDATION' | 'AI_CHAT' | 'DIRECT' | 'CART' | 'HOME';
 
 export interface ProductViewEvent extends BaseEvent {
   productId: string;

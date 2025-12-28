@@ -4,7 +4,7 @@ import React, { createContext, useContext, useCallback, useEffect, useState } fr
 import { api } from '@/lib/api';
 import { generateSessionId } from '@/lib/utils';
 import { useAuth } from './AuthContext';
-import { DeviceType } from '@/lib/types';
+import { DeviceType, ProductViewSource } from '@/lib/types';
 
 // Helper to detect device type from user agent
 const getDeviceType = (): DeviceType => {
@@ -25,7 +25,7 @@ interface EventContextType {
   recentlyViewedProductIds: string[];
   recentCategories: string[];
   trackPageView: (pageType: string, pagePath?: string) => void;
-  trackProductView: (productId: string, productName: string, category: string, price: number, source?: 'search' | 'category' | 'home' | 'recommendation' | 'direct' | 'cart', searchQuery?: string, viewDurationMs?: number) => void;
+  trackProductView: (productId: string, productName: string, category: string, price: number, source?: ProductViewSource, searchQuery?: string, viewDurationMs?: number) => void;
   trackCartEvent: (data: {
     action: 'add' | 'remove' | 'update_quantity' | 'clear';
     productId?: string;
@@ -151,7 +151,7 @@ export function EventProvider({ children }: { children: React.ReactNode }) {
   );
 
   const trackProductView = useCallback(
-    (productId: string, productName: string, category: string, price: number, source?: 'search' | 'category' | 'home' | 'recommendation' | 'direct' | 'cart', searchQuery?: string, viewDurationMs?: number) => {
+    (productId: string, productName: string, category: string, price: number, source?: ProductViewSource, searchQuery?: string, viewDurationMs?: number) => {
       if (!sessionId) return;
 
       // Track recently viewed products for chat personalization

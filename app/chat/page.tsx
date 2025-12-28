@@ -41,7 +41,7 @@ export default function ChatPage() {
       </div>
 
       <div className="flex-1 flex flex-col overflow-hidden relative">
-        <ChatView {...chat} productUrlSource="chat_recommendation" suggestedQuestions={suggestedQuestions} />
+        <ChatView {...chat} productUrlSource="AI_CHAT" suggestedQuestions={suggestedQuestions} />
       </div>
        <div className="bg-white">
           <p className="text-xs text-surface-400 text-center pb-3">

@@ -53,7 +53,7 @@ export function ChatView({
   toggleCompareProduct,
   handleCompare,
   clearCompareProducts,
-  productUrlSource = 'recommendation',
+  productUrlSource = 'RECOMMENDATION',
   suggestedQuestions = [],
   compact = false,
 }: ChatViewProps) {

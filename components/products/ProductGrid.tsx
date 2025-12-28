@@ -18,7 +18,7 @@ export default function ProductGrid({
   products,
   isLoading = false,
   emptyMessage = 'No products found',
-  source = 'direct',
+  source = 'DIRECT',
   searchQuery,
 }: ProductGridProps) {
   if (isLoading) {

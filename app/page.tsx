@@ -257,7 +257,7 @@ export default function HomePage() {
                 suggestions!.products.slice(0, 12).map((suggestion) => (
                   <Link
                     key={suggestion.product.id}
-                    href={`/products/${suggestion.product.id}?source=recommendation`}
+                    href={`/products/${suggestion.product.id}?source=RECOMMENDATION`}
                     className="p-4 hover:shadow-lg transition-shadow text-center group relative"
                   >
                     {/* Recommendation Badge */}
@@ -357,7 +357,7 @@ export default function HomePage() {
                 trendingProducts.slice(0, 12).map((product) => (
                   <Link
                     key={product.id}
-                    href={`/products/${product.id}?source=trending`}
+                    href={`/products/${product.id}?source=RECOMMENDATION`}
                     className="flex-shrink-0 w-[180px] p-4 border-r border-gray-100 hover:shadow-lg transition-shadow text-center group"
                   >
                     <div className="h-32 flex items-center justify-center mb-3">
@@ -465,7 +465,7 @@ export default function HomePage() {
               electronicsProducts.slice(0, 8).map((product) => (
                 <Link
                   key={product.id}
-                  href={`/products/${product.id}?source=home`}
+                  href={`/products/${product.id}?source=HOME`}
                   className="p-4 hover:shadow-lg transition-shadow text-center group border border-gray-100 rounded-sm"
                 >
                   <div className="h-32 flex items-center justify-center mb-3">
@@ -526,7 +526,7 @@ export default function HomePage() {
               fashionProducts.slice(0, 8).map((product) => (
                 <Link
                   key={product.id}
-                  href={`/products/${product.id}?source=home`}
+                  href={`/products/${product.id}?source=HOME`}
                   className="p-4 hover:shadow-lg transition-shadow text-center group border border-gray-100 rounded-sm"
                 >
                   <div className="h-32 flex items-center justify-center mb-3">

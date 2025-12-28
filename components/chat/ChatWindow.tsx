@@ -35,7 +35,7 @@ export default function ChatWindow({ onClose }: ChatWindowProps) {
       </div>
 
       <div className="flex-1 flex flex-col overflow-hidden relative bg-surface-50">
-        <ChatView {...chat} productUrlSource="chat_popup_recommendation" compact />
+        <ChatView {...chat} productUrlSource="AI_CHAT" compact />
       </div>
        <div className="bg-white border-t border-surface-200">
           <p className="text-xs text-surface-400 text-center pb-3 px-4">
