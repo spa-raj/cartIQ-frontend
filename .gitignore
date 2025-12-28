@@ -36,13 +36,6 @@ yarn-error.log*
 # vercel
 .vercel
 
-# firebase
-.firebase
-firebase-debug.log
-
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-#Claude AI file
-CLAUDE.md

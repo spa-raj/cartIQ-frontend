@@ -1,255 +1,307 @@
-# CartIQ Frontend
+# 🛒 CartIQ Frontend
 
-AI-powered e-commerce frontend built with Next.js for the **AI Partner Catalyst Hackathon** (Confluent Challenge).
+> **AI-Powered E-Commerce Experience with Real-Time Personalization**
 
-## Tech Stack
+[![AI Partner Catalyst Hackathon](https://img.shields.io/badge/Hackathon-AI%20Partner%20Catalyst-blue)](https://ai-partner-catalyst.devpost.com/)
+[![Confluent Challenge](https://img.shields.io/badge/Challenge-Confluent-orange)](https://confluent.io)
+[![Next.js 14](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://typescriptlang.org)
 
-- **Framework:** Next.js 14 (App Router)
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS
-- **State Management:** React Context
-- **Icons:** Lucide React
+The frontend for **CartIQ** — a modern e-commerce platform demonstrating real-time AI personalization powered by Confluent Kafka, Flink, and Google Vertex AI. Built with Next.js 14 for a seamless shopping experience.
 
-## Prerequisites
+---
 
-- Node.js 18+
-- npm or yarn
-- Backend API running (default: http://localhost:8082)
+## 📑 Table of Contents
 
-## Getting Started
+- [Key Features](#-key-features)
+- [Tech Stack](#-tech-stack)
+- [Demo Flow](#-demo-flow)
+- [Screenshots](#-screenshots)
+- [Project Structure](#-project-structure)
+- [Quick Start](#-quick-start)
+- [Event Tracking](#-event-tracking)
+- [AI Chat Interface](#-ai-chat-interface)
+- [Deployment](#-deployment)
+- [Related Repositories](#-related-repositories)
+- [License](#-license)
 
-### 1. Install Dependencies
+---
 
-```bash
-npm install
+## 🚀 Key Features
+
+### 1. Real-Time Event Tracking
+Every user interaction is captured and streamed to Kafka:
+- **Page Views** → Navigation patterns
+- **Product Views** → Category & price preferences
+- **Cart Actions** → Purchase intent signals
+- **AI Chat Queries** → Explicit intent (strongest signal!)
+
+### 2. AI-Powered Chat Assistant
+Floating chat widget with conversational product recommendations:
+- Natural language product search
+- Personalized suggestions based on real-time context
+- Product comparisons and use-case recommendations
+
+### 3. Personalized Home Page
+- **New Users**: See curated sections (Trending, Best of Electronics, Best of Fashion)
+- **Returning Users**: "Suggested For You" section with personalized recommendations
+- **Infinite Scroll**: Seamless browsing with lazy loading
+
+### 4. Full E-Commerce Experience
+- Product browsing with search & filters
+- Shopping cart management
+- User authentication
+- Order history
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| **Framework** | Next.js 14 (App Router) |
+| **Language** | TypeScript |
+| **Styling** | Tailwind CSS |
+| **State Management** | React Context + useState |
+| **Icons** | Lucide React |
+| **HTTP Client** | Fetch API |
+| **Deployment** | Google Cloud Run |
+
+---
+
+## 🎬 Demo Flow
+
+This is the recommended flow for demonstrating CartIQ:
+
+```
+1. New User Visit
+   └── Home page displays Trending, Best of Electronics, Best of Fashion
+   └── PAGE_VIEW event → Kafka
+
+2. Browse Products
+   └── Click on electronics products
+   └── PRODUCT_VIEW events → Kafka → Flink aggregation
+
+3. Add to Cart
+   └── Add items to shopping cart
+   └── CART events → Kafka (high intent signal)
+
+4. Gemini AI Chat
+   └── Ask: "Recommend Samsung phones under 30000"
+   └── AI_CHAT event → Kafka (strongest signal!)
+   └── Gemini responds with personalized recommendations
+
+5. Return to Home Page
+   └── "Suggested For You" section now appears!
+   └── Personalized recommendations based on Flink-aggregated context
+
+6. Complete Purchase
+   └── Checkout and place order
+   └── ORDER event → Kafka
 ```
 
-### 2. Environment Setup
+**The Feedback Loop:** Your browsing and chat queries → Kafka → Flink aggregation → Redis cache → Personalized homepage suggestions.
 
-Create a `.env.local` file in the root directory:
+---
 
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8082
-NEXT_PUBLIC_APP_NAME=CartIQ
-```
+## 📸 Screenshots
 
-For production, update `NEXT_PUBLIC_API_URL` to your deployed backend URL.
+| Home Page | AI Chat | Product Grid |
+|-----------|---------|--------------|
+| Curated sections for new users | Conversational recommendations | Browse with infinite scroll |
 
-### 3. Run Development Server
+---
 
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser.
-
-### 4. Build for Production
-
-```bash
-npm run build
-```
-
-## Project Structure
+## 📦 Project Structure
 
 ```
 cartiq-frontend/
-├── app/                    # Next.js App Router pages
-│   ├── layout.tsx          # Root layout
-│   ├── page.tsx            # Home page
-│   ├── products/           # Product pages
+├── app/                    # Next.js App Router
+│   ├── layout.tsx          # Root layout with Header/Footer
+│   ├── page.tsx            # Home page (personalized sections)
+│   ├── products/           # Product listing & details
 │   ├── cart/               # Shopping cart
 │   ├── orders/             # Order history
-│   ├── auth/               # Login/Register
-│   └── chat/               # AI Chat interface
-├── components/             # Reusable components
-│   ├── layout/             # Header, Footer
-│   ├── products/           # Product components
-│   ├── cart/               # Cart components
-│   ├── chat/               # AI Chat widget
-│   └── ui/                 # UI primitives
-├── lib/                    # Utilities
-│   ├── api.ts              # API client
-│   ├── types.ts            # TypeScript types
-│   └── utils.ts            # Helper functions
-├── context/                # React Context providers
+│   ├── auth/               # Login & Register
+│   └── chat/               # Full-page AI chat
+├── components/
+│   ├── layout/             # Header, Footer, Sidebar
+│   ├── products/           # ProductCard, ProductGrid
+│   ├── cart/               # CartItem, CartSummary
+│   ├── chat/               # ChatWidget, ChatWindow
+│   └── ui/                 # Buttons, Inputs, Cards
+├── context/
 │   ├── AuthContext.tsx     # Authentication state
-│   ├── CartContext.tsx     # Cart state
-│   └── EventContext.tsx    # Event tracking
+│   ├── CartContext.tsx     # Shopping cart state
+│   └── EventContext.tsx    # Kafka event tracking
+├── lib/
+│   ├── api.ts              # Backend API client
+│   ├── types.ts            # TypeScript interfaces
+│   └── utils.ts            # Helper functions
 └── public/                 # Static assets
 ```
 
-## Features
+---
 
-- User authentication (Register/Login)
-- Product browsing with search and filters
-- Shopping cart management
-- Order placement and history
-- AI-powered chat assistant
-- Real-time event tracking for Kafka
+## 🚀 Quick Start
 
-## Deploy on Firebase
+### Prerequisites
+- Node.js 18+
+- npm or yarn
+- Backend API running (see [cartiq-backend](https://github.com/spa-raj/cartIQ-backend))
 
-### 1. Install Firebase CLI
+### Local Development
 
 ```bash
-npm install -g firebase-tools
+# Clone the repository
+git clone https://github.com/spa-raj/cartIQ-frontend.git
+cd cartIQ-frontend
+
+# Install dependencies
+npm install
+
+# Create environment file
+cp .env.example .env.local
+# Edit .env.local with your backend URL
+
+# Start development server
+npm run dev
 ```
 
-### 2. Login to Firebase
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-```bash
-firebase login
-```
+### Environment Variables
 
-### 3. Initialize Firebase in your project
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NEXT_PUBLIC_API_URL` | Backend API URL | `http://localhost:8082` |
+| `NEXT_PUBLIC_APP_NAME` | Application name | `CartIQ` |
 
-```bash
-firebase init hosting
-```
+---
 
-When prompted:
-- Select your Firebase project (or create a new one)
-- Set public directory to `out`
-- Configure as single-page app: **No** (Next.js handles routing)
-- Set up automatic builds with GitHub: Optional
+## 📡 Event Tracking
 
-### 4. Update next.config.ts for Static Export
+The frontend tracks all user interactions for real-time personalization via the `EventContext`:
 
 ```typescript
-// next.config.ts
-import type { NextConfig } from 'next';
-
-const nextConfig: NextConfig = {
-  output: 'export',
-  trailingSlash: true,
-  images: {
-    unoptimized: true,
-  },
-};
-
-export default nextConfig;
+// Events sent to Kafka via backend
+trackEvent('product-view', { productId, category, price });
+trackEvent('cart', { action: 'ADD', productId, quantity });
+trackEvent('user', { eventType: 'PAGE_VIEW', pageType: 'HOME' });
 ```
 
-### 5. Build and Export
+### Event Types
+
+| Event | Kafka Topic | Signal Strength |
+|-------|-------------|-----------------|
+| Page View | `user-events` | Low |
+| Product View | `product-views` | Medium |
+| Cart Action | `cart-events` | High |
+| Order Placed | `order-events` | High |
+| AI Chat Query | `ai-events` | **Strongest** |
+
+---
+
+## 💬 AI Chat Interface
+
+The AI chat widget demonstrates real-time RAG (Retrieval Augmented Generation):
+
+### Sample Queries
+```
+"Recommend Samsung phones under 30000"
+"Show me wireless earbuds with good bass"
+"Compare Apple and Samsung laptops"
+"What's good for gaming under 50000?"
+"I need running shoes for marathon training"
+```
+
+### How It Works
+1. User sends query → Backend receives message
+2. 4-Way Hybrid Search (Vector + FTS + Category + Brand)
+3. Re-ranking with Vertex AI Ranking API
+4. Gemini generates conversational response
+5. Chat event published to Kafka → influences future suggestions
+
+---
+
+## 🚀 Deployment
+
+### GitHub Actions (Recommended)
+
+The project includes automated CI/CD via GitHub Actions. On every push to `main`:
+
+1. Builds the Docker image
+2. Pushes to Google Artifact Registry
+3. Deploys to Google Cloud Run
+
+See [`.github/workflows/cloud-run-deploy.yml`](.github/workflows/cloud-run-deploy.yml) for the workflow configuration.
+
+**Required GitHub Secrets:**
+| Secret | Description |
+|--------|-------------|
+| `GCP_PROJECT_ID` | Google Cloud project ID |
+| `WIF_PROVIDER` | Workload Identity Federation provider |
+| `WIF_SERVICE_ACCOUNT` | Service account for WIF |
+| `NEXT_PUBLIC_API_URL` | Backend API URL |
+
+**Required GitHub Variables:**
+| Variable | Description |
+|----------|-------------|
+| `GCP_REGION` | Deployment region (default: `us-central1`) |
+
+### Google Cloud Run (Manual)
 
 ```bash
-npm run build
+# Build Docker image
+docker build -t gcr.io/PROJECT_ID/cartiq-frontend .
+
+# Push to Container Registry
+docker push gcr.io/PROJECT_ID/cartiq-frontend
+
+# Deploy to Cloud Run
+gcloud run deploy cartiq-frontend \
+  --image gcr.io/PROJECT_ID/cartiq-frontend \
+  --platform managed \
+  --region us-central1 \
+  --allow-unauthenticated
 ```
 
-This generates static files in the `out` directory.
+---
 
-### 6. Deploy to Firebase
+## 📊 Hackathon Alignment
 
-```bash
-firebase deploy --only hosting
-```
+| Requirement | Implementation | Status |
+|-------------|----------------|--------|
+| Real-time Events | All user interactions tracked to Kafka | ✅ |
+| AI Integration | Chat widget with Gemini-powered responses | ✅ |
+| Personalization | "Suggested For You" with Flink-enriched context | ✅ |
+| New User Experience | Curated sections (Trending, Electronics, Fashion) | ✅ |
+| Modern Stack | Next.js 14, TypeScript, Tailwind CSS | ✅ |
+| Production Ready | Deployed on Google Cloud Run | ✅ |
 
-### Firebase Hosting Configuration
+---
 
-Your `firebase.json` should look like:
+## 📚 Documentation
 
-```json
-{
-  "hosting": {
-    "public": "out",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ],
-    "headers": [
-      {
-        "source": "**/*.@(js|css|jpg|jpeg|gif|png|svg|ico|webp)",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "max-age=31536000, immutable"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
+- [Architecture Overview](https://github.com/spa-raj/cartIQ-backend/blob/main/docs/ARCHITECTURE.md) (Backend Repo)
+- [API Testing Guides](./docs/Backend-APIs/)
+- [Chat Integration](./docs/FRONTEND_CHAT_INTEGRATION.md)
 
-### Environment Variables for Firebase
+---
 
-Set environment variables in Firebase:
+## 🤝 Related Repositories
 
-```bash
-# For build-time variables, add to .env.production
-NEXT_PUBLIC_API_URL=https://your-backend-api.com
-NEXT_PUBLIC_APP_NAME=CartIQ
-```
+- **Backend**: [cartiq-backend](https://github.com/spa-raj/cartIQ-backend) - Java 17, Spring Boot, Kafka, Flink, Vertex AI, Gemini
 
-### Continuous Deployment with GitHub Actions
+---
 
-Create `.github/workflows/firebase-deploy.yml`:
-
-```yaml
-name: Deploy to Firebase Hosting
-
-on:
-  push:
-    branches:
-      - main
-
-jobs:
-  build_and_deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build
-        run: npm run build
-        env:
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
-          NEXT_PUBLIC_APP_NAME: CartIQ
-
-      - name: Deploy to Firebase
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          channelId: live
-          projectId: your-firebase-project-id
-```
-
-## Available Scripts
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Build for production |
-| `npm run start` | Start production server |
-| `npm run lint` | Run ESLint |
-
-## Documentation
-
-### Architecture
-- [Architecture Overview](docs/ARCHITECTURE.md) - System design, components, and data flow
-
-### API Testing Guides
-See the `docs/Backend-APIs` folder for API testing guides:
-- [User API Testing](docs/USER_API_TESTING.md)
-- [Product API Testing](docs/PRODUCT_API_TESTING.md)
-- [Order API Testing](docs/ORDER_API_TESTING.md)
-
-## License
+## 📄 License
 
 MIT
+
+---
+
+<p align="center">
+  <b>Built for the AI Partner Catalyst Hackathon (Confluent Challenge)</b><br>
+  <i>Real-time AI personalization that traditional batch systems can't match.</i>
+</p>
